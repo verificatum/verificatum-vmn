@@ -1,0 +1,264 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+BENCH=${1}
+OPERATION=${2}
+LENGTHS="${3}"
+
+. benchmarks/benchmacros
+
+
+
+####################################################################
+########## Collect lists of results from benchmarks ################
+####################################################################
+
+E_LIST=""
+V_LIST=""
+
+C_LIST=""
+P_LIST=""
+
+INDEX=1
+for LENGTH in ${LENGTHS};
+do
+
+    completed_ms VERIFY_EXECUTION_MS "vmnv_log" ${INDEX}
+    V_LIST="${V_LIST} ${VERIFY_EXECUTION_MS}"
+
+    size_bytes SIZE_BYTES "vmnv_log" ${INDEX}
+    P_LIST="${P_LIST} ${SIZE_BYTES}"
+
+    INDEX=`echo "${INDEX} + 1" | bc`
+ 
+    effective_ms EFFECTIVE_MS "vmn_log" ${INDEX}
+    E_LIST="${E_LIST} ${EFFECTIVE_MS}"
+
+    total_bytes TOTAL_BYTES "vmn_log" ${INDEX}    
+    C_LIST="${C_LIST} ${TOTAL_BYTES}"
+
+done
+
+
+
+####################################################################
+########## Derive linear approximations of the data ################
+####################################################################
+
+# Derive affine polynomial.
+apxaffine E_SCALAR E_CONSTANT "${LENGTHS}" "${E_LIST}"
+affine_list SE_LIST "${E_SCALAR}" "${E_CONSTANT}" "${LENGTHS}"
+
+# Derive affine polynomial.
+apxaffine V_SCALAR V_CONSTANT "${LENGTHS}" "${V_LIST}"
+affine_list SV_LIST "${V_SCALAR}" "${V_CONSTANT}" "${LENGTHS}"
+
+# Derive affine polynomial.
+apxaffine C_SCALAR C_CONSTANT "${LENGTHS}" "${C_LIST}"
+affine_list SC_LIST "${C_SCALAR}" "${C_CONSTANT}" "${LENGTHS}"
+
+# Derive affine polynomial.
+apxaffine P_SCALAR P_CONSTANT "${LENGTHS}" "${P_LIST}"
+affine_list SP_LIST "${P_SCALAR}" "${P_CONSTANT}" "${LENGTHS}"
+
+
+
+####################################################################
+########## Print header and linear approximations ##################
+####################################################################
+
+tee_printf "\nRESULTS\n"
+printeqbar
+
+tee_print_abstract \
+"Shows that the running times E(N) and V(N) for ${OPERATION} and for
+verifying ${OPERATION}, respectively, grow linearly with the number N
+of ciphertexts, and that the number of bytes of data communicated
+C(N), and the the sizes of Fiat-Shamir proofs P(N) grow similarly.
+
+Approximations of the functions E(N), V(N), C(N), and P(N):"
+
+tee_printf "    e(N) = %.3f * N  +  %.3f (ms)\n" ${E_SCALAR} ${E_CONSTANT}
+tee_printf "    v(N) = %.3f * N  +  %.3f (ms)\n" ${V_SCALAR} ${V_CONSTANT}
+tee_printf "\n"
+tee_printf "    c(N) = %.3f * N  +  %.3f (bytes)\n" ${C_SCALAR} ${C_CONSTANT}
+tee_printf "    p(N) = %.3f * N  +  %.3f (bytes)\n" ${P_SCALAR} ${P_CONSTANT}
+tee_printf "\n\n"
+
+
+
+####################################################################
+########## Print table of results for execution and verification ###
+####################################################################
+
+CAP_OPERATION=`echo ${OPERATION} | tr '[:lower:]' '[:upper:]'`
+
+CIPHSTRING="Ciphertexts:"
+ESTRING="Executing:"
+VSTRING="Verifying:"
+
+str_len CIPHSTRING_LEN ${CIPHSTRING}
+CIPHSTRINGBAR=`echo "${CIPHSTRING}" | sed "s/./-/g"`
+
+str_len ESTRING_LEN ${ESTRING}
+str_len VSTRING_LEN ${VSTRING}
+
+str_len EVSTRING_LEN "${ESTRING}  ${VSTRING}"
+EVSTRINGBAR=`echo "${ESTRING}  ${VSTRING}" | sed "s/./-/g"`
+
+TOP_FORMAT=\
+"%-${CIPHSTRING_LEN}s | %-${EVSTRING_LEN}s | %-${EVSTRING_LEN}s\n"
+FORMAT=\
+"%${CIPHSTRING_LEN}s | %${ESTRING_LEN}s  %${VSTRING_LEN}s | %${ESTRING_LEN}s  %${VSTRING_LEN}s\n"
+
+tee_printf \
+    "${TOP_FORMAT}" "${CAP_OPERATION}" "Time (sec)" "Time/ciphertext (ms)"
+tee_printf \
+    "${FORMAT}" "${CIPHSTRING}" "${ESTRING}" "${VSTRING}" "${ESTRING}" "${VSTRING}"
+
+tee_printf \
+    "%s-+-%s-+-%s\n" "${CIPHSTRINGBAR}" "${EVSTRINGBAR}" "${EVSTRINGBAR}"
+
+
+E_DELTA=0
+V_DELTA=0
+
+X_LIST="${LENGTHS}"
+
+length ITERATIONS "${X_LIST}"
+for x in `seq 1 ${ITERATIONS}`;
+do
+    pop X X_LIST "${X_LIST}"
+    commatized CX ${X}
+
+    pop E E_LIST "${E_LIST}"
+    pop SE SE_LIST "${SE_LIST}"
+    E_AVG=`echo "${E} / ${X}" | bc -l`
+    secs E_SECS ${E}
+    mss E_AVG_MS ${E_AVG}
+
+    pop V V_LIST "${V_LIST}"
+    pop SV SV_LIST "${SV_LIST}"
+    V_AVG=`echo "${V} / ${X}" | bc -l`
+    secs V_SECS ${V}
+    mss V_AVG_MS ${V_AVG}
+
+    tee_printf "${FORMAT}" "${CX}" \
+	"${E_SECS}" "${V_SECS}" "${E_AVG_MS}" "${V_AVG_MS}"
+
+    DIFF=`echo "${E} - ${SE}" | bc -l | tr -d "-"`    
+    E_DELTA_T=`echo "${DIFF} / ${E}" | bc -l`
+    max E_DELTA ${E_DELTA} ${E_DELTA_T}
+
+    DIFF=`echo "${V} - ${SV}" | bc -l | tr -d "-"`
+    V_DELTA_T=`echo "${DIFF} / ${V}" | bc -l`
+    max V_DELTA ${V_DELTA} ${V_DELTA_T}
+
+done
+
+rel E_DELTA_REL ${E_DELTA}
+rel V_DELTA_REL ${V_DELTA}
+
+tee_printf "
+Recall that E(N) and V(N) denote the execution time and verification
+time respectively in milliseconds on N ciphertexts. We bound the error
+of our approximations compared to the benchmark by:
+
+    |e(N) - E(N)| / E(N) <= ${E_DELTA_REL}
+    |v(N) - V(N)| / V(N) <= ${V_DELTA_REL}"
+
+tee_printf "\n\n\n"
+
+
+
+####################################################################
+########## Print table of results for communication and proof size #
+####################################################################
+
+CSTRING="Communicated:"
+PSTRING="    Proof:"
+
+str_len CIPHSTRING_LEN ${CIPHSTRING}
+CIPHSTRINGBAR=`echo "${CIPHSTRING}" | sed "s/./-/g"`
+
+str_len CSTRING_LEN ${CSTRING}
+CSTRINGBAR=`echo "${CSTRING}" | sed "s/./-/g"`
+
+str_len PSTRING_LEN "${PSTRING}"
+PSTRINGBAR=`echo "${PSTRING}" | sed "s/./-/g"`
+
+
+TOP_FORMAT="%-${CIPHSTRING_LEN}s | Data\n"
+FORMAT="%${CIPHSTRING_LEN}s | %${CSTRING_LEN}s     %${PSTRING_LEN}s\n"
+
+tee_printf "${TOP_FORMAT}" "${CAP_OPERATION}"
+tee_printf "${FORMAT}" "${CIPHSTRING}" "${CSTRING}" "${PSTRING}"
+tee_printf "%s-+-%s-----%s\n" "${CIPHSTRINGBAR}" "${CSTRINGBAR}" "${PSTRINGBAR}"
+
+C_DELTA=0
+P_DELTA=0
+
+X_LIST="${LENGTHS}"
+
+length ITERATIONS "${X_LIST}"
+for x in `seq 1 ${ITERATIONS}`;
+do
+    pop X X_LIST "${X_LIST}"
+    commatized CX ${X}
+
+    pop C C_LIST "${C_LIST}"
+    pop SC SC_LIST "${SC_LIST}"
+    hb HC ${C}
+
+    pop P P_LIST "${P_LIST}"
+    pop SP SP_LIST "${SP_LIST}"
+    hb HP ${P}
+
+    tee_printf "${FORMAT}" "${CX}" "${HC}" "${HP}"
+
+    DIFF=`echo "${C} - ${SC}" | bc -l | tr -d "-"`    
+    C_DELTA_T=`echo "${DIFF} / ${C}" | bc -l`
+    max C_DELTA ${C_DELTA} ${C_DELTA_T}
+
+    DIFF=`echo "${P} - ${SP}" | bc -l | tr -d "-"`
+    P_DELTA_T=`echo "${DIFF} / ${P}" | bc -l`
+    max P_DELTA ${P_DELTA} ${P_DELTA_T}
+
+done
+
+
+rel C_DELTA_REL ${C_DELTA}
+rel P_DELTA_REL ${P_DELTA}
+
+tee_printf "
+Recall that C(N) denotes the number of bytes communicated, and P(N)
+denotes the size in bytes of the Fiat-Shamir proof of correctness. We
+bound the error of our approximations compared to the benchmark by:
+
+    |c(N) - C(N)| / C(N) <= ${C_DELTA_REL}
+    |p(N) - P(N)| / P(N) <= ${P_DELTA_REL}"
+
+tee_printf "\n"
+
+printeqbar
+
+
+
+
+

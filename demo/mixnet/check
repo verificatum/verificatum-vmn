@@ -1,0 +1,143 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+###########################################################################
+######################## Execute Demonstration. ###########################
+###########################################################################
+
+condverify() {
+    set +e
+    if test $CORRECTNESS = "noninteractive";
+    then
+	./verify || exit $?
+    fi
+    set -e
+}
+
+condprecomp() {
+    set +e
+    if test x${MAX_NO_CIPHERTEXTS} != x;
+    then
+	./precomp || exit $?
+    fi
+    set -e
+}
+
+checkreject() {
+
+    if test x`grep reject mydemodir/Party01/dir/log` != x;
+    then
+	printf "\nSomebody rejected a proof!\n\n"
+    fi
+}
+
+prifdef() {
+    printf "$1=$2\n"
+}
+
+dumpparams() {
+
+    printf "Parameters of check: $CHECK\n\n"
+
+    prifdef NO_MIXSERVERS $NO_MIXSERVERS
+    prifdef THRESHOLD $THRESHOLD
+    prifdef MAX_NO_CIPHERTEXTS $MAX_NO_CIPHERTEXTS
+    prifdef FORCED_MAX_NO_CIPHERTEXTS $FORCED_MAX_NO_CIPHERTEXTS
+    prifdef NO_CIPHERTEXTS $NO_CIPHERTEXTS
+    prifdef PGROUP "$PGROUP"
+    prifdef CORRECTNESS $CORRECTNESS
+    prifdef WIDTH $WIDTH
+    prifdef KEYWIDTH $KEYWIDTH
+    prifdef FORCED_WIDTH $FORCED_WIDT
+    prifdef INTER $INTER
+    prifdef HASH $HASH
+    prifdef SIG $SIG
+    prifdef PRG $PRG
+    prifdef RAND $RAND
+    prifdef ARRAYS $ARRAYS
+    printf "\n"
+}
+
+CHECKS="threshold1 thresholdlarge manyciphs maxciph forcedmaxciph fixed interactive width forcedwidth keywidth31 keywidth32 raw json jsondecode provablehash provableprg provablerandsrc heuristicrandsrc ram"
+
+printf "
+###########################################################################
+
+           CHECKING COMMAND-LINE EXECUTION OF MIX-NET
+
+ Please be very patient. This check may take a long time. It iterates
+ through a large number of different configurations of the mix-net and
+ for each configuration we use the mix-net to mix ciphertexts, to
+ shuffle ciphertexts without decrypting, and to decrypt ciphertexts
+ without shuffling. Keep in mind that a mix-net is a multiparty
+ protocol.
+\n
+"
+
+for CHECK in $CHECKS;
+do
+    printf "###########################################################################\n\n"
+    printf "CHECK=$CHECK" > conf
+    cat .checkbaseconf >> conf
+
+    . ./conf
+
+    dumpparams
+
+    set -e
+
+    # Check mixing.
+    ./clean
+    ./info_files
+    ./keygen
+    ./gen_ciphs
+    condprecomp
+    ./mix
+    condverify
+    checkreject
+
+    # Check shuffling.
+    ./delete
+    condprecomp
+    ./shuffle
+    condverify
+    checkreject
+
+    # Check decryption.
+    ./delete
+    ./decrypt
+    condverify
+    checkreject
+
+    # Check shuffling with imported public key.
+    ./clean
+    ./info_files
+    ./setpk
+    ./gen_ciphs
+    condprecomp
+    ./shuffle
+    condverify
+
+    checkreject
+
+    set +e
+
+    printf "\n"
+
+done

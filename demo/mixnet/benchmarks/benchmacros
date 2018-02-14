@@ -1,0 +1,789 @@
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+export LC_NUMERIC="en_US.UTF-8"
+
+# Keep in mind that "local" is applied *after* assignment if done at
+# the same time, e.g., local x=0. Thus, we need to declare variables
+# as local separately. We use the eval-pattern to return values to the
+# caller and we use the convention that any local variable has the
+# function name as a prefix. This reduces the risk of a global
+# variable name clashing with the name of a local variable, which
+# gives errors that are hard to debug.
+
+
+#####################################################################
+######## Commands for printing ######################################
+#####################################################################
+
+tee_printf() {
+    {
+	printf "$@"
+    } | tee -a demo_log
+}
+
+printbar() {
+    tee_printf "\n%s\n" "######################################################################"
+}
+
+beginbenchmark() {
+    printbar
+    tee_printf " BEGIN BENCHMARK %s" $1
+    printbar
+}
+
+endbenchmark() {
+    printbar
+    tee_printf " END BENCHMARK"
+    printbar
+}
+
+printthinbar() {
+    tee_printf "\n%s\n" "----------------------------------------------------------------------"
+}
+
+printeqbar() {
+    tee_printf "%s\n" "======================================================================"
+}
+
+tee_print_abstract() {
+    tee_printf "\n${1}\n\n"
+}
+
+
+#####################################################################
+######## Commands for working with numbers ##########################
+#####################################################################
+
+# Evaluates an arithmetic floating point expression.
+arithm() {
+    local arithm_RES
+    local arithm_EXPR
+
+    arithm_EXPR="${2}"
+    arithm_RES=`echo "${arithm_EXPR}" | bc -l`
+
+    eval "$1=\${arithm_RES}"
+}
+
+# Maximum of two floating point numbers.
+max() {
+    local max_LEFT
+    local max_RIGHT
+    local max_CMP
+
+    max_LEFT=${2}
+    max_RIGHT=${3}
+
+    arithm max_CMP "${max_LEFT} > ${max_RIGHT}"
+    if test ${max_CMP} = "1";
+    then
+	eval "$1=\${max_LEFT}"
+    else
+	eval "$1=\${max_RIGHT}"
+    fi
+}
+
+# Absolute value.
+abs() {
+    local abs_N
+
+    abs_N="${2}"
+    abs_N=`echo "${abs_N}" | tr -d "-"`
+
+    eval "$1=\${abs_N}"
+}
+
+# Convert floating point milliseconds to seconds with two decimals.
+secs() {
+    local secs_MS
+    local secs_SECS
+    local secs_RES
+
+    secs_MS=${2}
+    arithm secs_SECS "${secs_MS} / 1000"
+    secs_RES=`printf "%.2f" ${secs_SECS}`
+
+    eval "${1}=\${secs_RES}"
+}
+
+# Take ceiling of floating point milliseconds. 
+mss() {
+    local mss_MS
+    local mss_RES
+
+    mss_MS=${2}
+    mss_RES=`printf "%.f" ${mss_MS}`
+
+    eval "${1}=\${mss_RES}"
+}
+
+# Round floating point number to two decimals. 
+rel() {
+    local rel_FLOAT
+    local rel_RES
+
+    rel_FLOAT=${2}
+    rel_RES=`printf "%.2f" ${rel_FLOAT}`
+
+    eval "${1}=\${rel_RES}"
+}
+
+# Converts a number of bytes into the corresponded number of KB, MB,
+# or GB as appropriate, rounded to one decimal.
+hb() {
+    local hb_B
+    local bh_UNIT
+    local hb_D
+    local hb_GD
+    local hb_MD
+    local hb_KD
+    local hb_RES
+
+    hb_B=${2}
+
+    hb_UNIT="B "
+
+    arithm hb_D "${hb_B} / 1000000000"
+    arithm hb_GD "${hb_D} > 1"
+
+    if test ${hb_GD} = "1";
+    then
+	hb_UNIT="GB"
+    else
+	arithm hb_D "${hb_B} / 1000000"
+	arithm hb_MD "${hb_D} > 1"
+
+	if test ${hb_MD} = "1";
+	then
+	    hb_UNIT="MB"
+	else
+	    arithm hb_D "${hb_B} / 1000"
+	    arithm hb_KD "${hb_D} > 1"
+
+	    if test ${hb_KD} = "1";
+	    then
+		hb_UNIT="KB"
+	    else
+		hb_D=${hb_B}
+		hb_UNIT="B "
+	    fi
+	fi
+    fi
+    local hb_RES="`printf \"%.1f %s\" ${hb_D} \"${hb_UNIT}\"`"
+    eval "$1=\${hb_RES}"
+}
+
+# Converts an integer to a more readable form where commas have been
+# inserted to emphasize every triple of digits starting from the least
+# significant digits.
+commatized() {
+    local commatized_N
+    local commatized_EXPANDED_N
+    local commatized_LEN
+    local commatized_REM
+    local commatized_C
+    local commatized_RES
+
+    commatized_N=${2}
+
+    commatized_EXPANDED_N="`echo \"${commatized_N}\" | sed \"s/\(.\)/\1\ /g\"`"
+    length commatized_LEN "${commatized_EXPANDED_N}"
+
+    commatized_RES=""
+    for commatized_C in ${commatized_EXPANDED_N};
+    do
+	arithm commatized_REM "${commatized_LEN} % 3"
+
+	if test ${commatized_REM} = 0;
+	then
+	    commatized_RES="${commatized_RES},${commatized_C}"
+	else
+	    commatized_RES="${commatized_RES}${commatized_C}"
+	fi
+
+	arithm commatized_LEN "${commatized_LEN} - 1"
+    done
+    commatized_RES=`echo ${commatized_RES} | sed "s/^,//"`
+
+    eval "${1}=\${commatized_RES}"
+}
+
+
+#####################################################################
+######## Commands for working with strings and lists ################
+#####################################################################
+
+# Length of string.
+str_len() {
+    local str_len_STR
+    local str_len_RES
+
+    str_len_STR="${2}"
+    str_len_RES=`printf "${str_len_STR}" | wc -c`
+
+    eval "${1}=\${str_len_RES}"
+}
+
+# First element of a list.
+first() {
+    local first_LIST
+    local first_RES
+
+    first_LIST="${2}"
+    first_RES=`echo "${first_LIST}" | sed "s/^\s*\(\S\S*\).*/\1/"`
+
+    eval "${1}=\${first_RES}"
+}
+
+# Second element of a list.
+second() {
+    local second_LIST
+    local second_RES
+
+    second_LIST="${2}"
+    second_RES=`echo "${second_LIST}" | sed "s/^\s*\(\S\S*\)\s*\(\S\S*\).*/\2/"`
+
+    eval "${1}=\${second_RES}"
+}
+
+# Last element of a list.
+last() {
+    local last_LIST
+    local last_RES
+
+    last_LIST="${2}"
+    last_RES=`echo "${last_LIST}" | sed "s/.*\s\s*\(\S\S*\)\s*\$/\1/"`
+
+    eval "${1}=\${last_RES}"
+}
+
+# Pop the first element of a list as if it was a stack.
+pop() {
+    local pop_LIST
+    local pop_HEAD
+    local pop_TAIL
+
+    pop_LIST="${3}"
+
+    first pop_HEAD "${pop_LIST}"
+    pop_TAIL="`echo \"${pop_LIST}\" | sed \"s/^\\s*\\S\\S*\\s*//\"`"
+
+    eval "${1}=\${pop_HEAD}"
+    eval "${2}=\${pop_TAIL}"
+}
+
+# Scale each element of a list of floating point numbers.
+scale_list() {
+    local scale_list_FACTOR
+    local scale_list_LIST
+    local scale_list_SCALED_LIST
+    local scale_list_ELEMENT
+    local scale_list_SCALED_ELEMENT
+    local scale_list_RES
+
+    scale_list_FACTOR="${2}"
+    scale_list_LIST="${3}"
+
+    scale_list_SCALED_LIST=""
+    for scale_list_ELEMENT in ${scale_list_LIST};
+    do
+	arithm scale_list_SCALED_ELEMENT "${scale_list_FACTOR} * ${scale_list_ELEMENT}"
+	scale_list_SCALED_LIST="${scale_list_SCALED_LIST} ${scale_list_SCALED_ELEMENT}"
+    done
+    scale_list_SCALED_LIST=`echo "${scale_list_SCALED_LIST}" | sed "s/\s*//"`
+
+    eval "${1}=\${scale_list_SCALED_LIST}"
+}
+
+# Find maximum relative difference.
+find_maximum() {
+    local find_maximum_X_LIST
+    local find_maximum_Y_LIST
+    local find_maximum_DELTA
+    local find_maximum_DIFF
+    local find_maximum_ABS
+    local find_maximum_DELTA_T
+    local find_maximum_LEN
+
+    find_maximum_X_LIST="${2}"
+    find_maximum_Y_LIST="${3}"
+
+    length find_maximum_LEN "${find_maximum_X_LIST}"
+    find_maximum_DELTA=0
+    for x in `seq 1 ${find_maximum_LEN}`;
+    do
+
+	pop find_maximum_X find_maximum_X_LIST "${find_maximum_X_LIST}"
+	pop find_maximum_Y find_maximum_Y_LIST "${find_maximum_Y_LIST}"
+
+	arithm find_maximum_DIFF "${find_maximum_X} - ${find_maximum_Y}"
+	abs find_maximum_ABS "${find_maximum_DIFF}"
+	arithm find_maximum_DELTA_T "${find_maximum_ABS} / ${find_maximum_X}"
+	max find_maximum_DELTA ${find_maximum_DELTA} ${find_maximum_DELTA_T}
+
+    done
+
+    eval "${1}=\${find_maximum_DELTA}"
+}
+
+# Length of list.
+length() {
+    local length_LIST
+    local length_ELEMENT
+    local length_RES
+
+    length_LIST="${2}"
+
+    length_RES=0
+    for length_ELEMENT in ${length_LIST}
+    do
+	arithm length_RES "${length_RES} + 1"
+    done
+
+    eval "${1}=\${length_RES}"
+}
+
+
+#####################################################################
+######## Commands for working with strings and lists ################
+#####################################################################
+
+# Affine map applied to floating point number.
+affine() {
+    local affine_A
+    local affine_B
+    local affine_X
+    local affine_RES
+
+    affine_A=${2}
+    affine_B=${3}
+    affine_X=${4}
+
+    arithm affine_RES "${affine_A} * ${affine_X} + ${affine_B}"
+
+    eval "${1}=\${affine_RES}"
+}
+
+# Affine map applied to list of floating point numbers.
+affine_list() {
+    local affine_list_A
+    local affine_list_B
+    local affine_list_X_LIST
+    local affine_list_X
+    local affine_list_Y
+    local affine_list_RES
+
+    affine_list_A=${2}
+    affine_list_B=${3}
+    affine_list_X_LIST="${4}"
+
+    affine_list_RES=""
+    for affine_list_X in ${affine_list_X_LIST};
+    do
+	affine affine_list_Y ${affine_list_A} ${affine_list_B} ${affine_list_X}
+	affine_list_RES="${affine_list_RES} ${affine_list_Y}"
+    done
+    affine_list_RES=`echo "${affine_list_RES}" | sed "s/\s*//"`
+
+    eval "${1}=\${affine_list_RES}"
+}
+
+# Approximates the scalar of an affine function assumed to
+# approximately correspond to the lists of inputs and outputs.
+apxscalar() {
+    local apxscalar_X_LIST
+    local apxscalar_Y_LIST
+    local apxscalar_X_FIRST
+    local apxscalar_X_LAST
+    local apxscalar_Y_FIRST
+    local apxscalar_Y_LAST
+    local apxscalar_DX
+    local apxscalar_DY
+    local apxscalar_RES
+
+    apxscalar_X_LIST="${2}"
+    apxscalar_Y_LIST="${3}"
+
+    first apxscalar_X_FIRST "${apxscalar_X_LIST}"
+    last apxscalar_X_LAST "${apxscalar_X_LIST}"
+    arithm apxscalar_DX "${apxscalar_X_LAST} - ${apxscalar_X_FIRST}"
+
+    first apxscalar_Y_FIRST "${apxscalar_Y_LIST}"
+    last apxscalar_Y_LAST "${apxscalar_Y_LIST}"
+    arithm apxscalar_DY "${apxscalar_Y_LAST} - ${apxscalar_Y_FIRST}"
+
+    arithm apxscalar_RES "${apxscalar_DY} / ${apxscalar_DX}"
+
+    eval "${1}=\${apxscalar_RES}"
+}
+
+# Approximates the constant of an affine function assumed to
+# approximately correspond to the lists of inputs and outputs.
+apxconstant() {
+    local apxconstant_X_LIST
+    local apxconstant_Y_LIST
+    local apxconstant_SCALAR
+    local apxconstant_LEN
+    local apxconstant_X
+    local apxconstant_Y
+    local apxconstant_SUM
+    local apxconstant_T
+    local apxconstant_RES
+
+    apxconstant_X_LIST="${2}"
+    apxconstant_Y_LIST="${3}"
+    apxconstant_SCALAR="${4}"
+
+    length apxconstant_LEN "${apxconstant_X_LIST}"
+
+    apxconstant_SUM=0
+    for x in ${apxconstant_X_LIST};
+    do
+	pop apxconstant_X apxconstant_X_LIST "${apxconstant_X_LIST}"
+	pop apxconstant_Y apxconstant_Y_LIST "${apxconstant_Y_LIST}"
+
+	arithm apxconstant_T "${apxconstant_Y} - (${apxconstant_X} * ${apxconstant_SCALAR})"
+	arithm apxconstant_SUM "${apxconstant_SUM} + ${apxconstant_T}"
+    done
+
+    arithm apxconstant_RES "${apxconstant_SUM} / ${apxconstant_LEN}"
+    eval "${1}=\${apxconstant_RES}"
+}
+
+# Approximates the affine function assumed to approximately correspond
+# to the lists of inputs and outputs.
+apxaffine() {
+    local apxaffine_X_LIST
+    local apxaffine_Y_LIST
+    local apxaffine_SCALAR
+    local apxaffine_CONSTANT
+
+    apxaffine_X_LIST="${3}"
+    apxaffine_Y_LIST="${4}"
+
+    apxscalar apxaffine_SCALAR "${apxaffine_X_LIST}" "${apxaffine_Y_LIST}"
+    apxconstant apxaffine_CONSTANT "${apxaffine_X_LIST}" "${apxaffine_Y_LIST}" ${apxaffine_SCALAR}
+
+    eval "${1}=\${apxaffine_SCALAR}"
+    eval "${2}=\${apxaffine_CONSTANT}"
+}
+
+# Quadratic function with linear frames.
+quadratic() {
+    local quadratic_A_1
+    local quadratic_B_1
+    local quadratic_A
+    local quadratic_B
+    local quadratic_KAPPA
+    local quadratic_OMEGA
+    local quadratic_RES
+
+    quadratic_A_1=${2}
+    quadratic_B_1=${3}
+    quadratic_A=${4}
+    quadratic_B=${5}
+    quadratic_KAPPA=${6}
+    quadratic_OMEGA=${7}
+
+    if test ${quadratic_KAPPA} = "1" -o ${quadratic_OMEGA} = "1";
+    then
+	arithm quadratic_RES "${quadratic_A_1} * ${quadratic_KAPPA} * ${quadratic_OMEGA} + ${quadratic_B_1}"
+    else
+	arithm quadratic_RES "${quadratic_A} * ${quadratic_KAPPA} * ${quadratic_OMEGA} + ${quadratic_B}"
+    fi
+    eval "${1}=\${quadratic_RES}"
+}
+
+# Evaluation of quadratic function with linear frames.
+quadratic_list() {
+    local quadratic_list_A_1
+    local quadratic_list_B_1
+    local quadratic_list_A
+    local quadratic_list_B
+    local quadratic_list_KAPPA_LIST
+    local quadratic_list_OMEGA_LIST
+    local quadratic_list_KAPPA
+    local quadratic_list_OMEGA
+    local quadratic_list_Y_LIST_LIST
+    local quadratic_list_Y_LIST
+    local quadratic_list_Y
+
+    quadratic_list_A_1=${2}
+    quadratic_list_B_1=${3}
+    quadratic_list_A=${4}
+    quadratic_list_B=${5}
+    quadratic_list_KAPPA_LIST="${6}"
+    quadratic_list_OMEGA_LIST="${7}"
+
+    quadratic_list_Y_LIST_LIST=""
+
+    for quadratic_list_KAPPA in ${quadratic_list_KAPPA_LIST};
+    do
+	quadratic_list_Y_LIST=""
+
+	for quadratic_list_OMEGA in ${quadratic_list_OMEGA_LIST};
+	do
+	    quadratic quadratic_list_Y ${quadratic_list_A_1} ${quadratic_list_B_1} ${quadratic_list_A} ${quadratic_list_B} ${quadratic_list_KAPPA} ${quadratic_list_OMEGA}
+	    quadratic_list_Y_LIST="${quadratic_list_Y_LIST}_${quadratic_list_Y}"
+	done
+
+	quadratic_list_Y_LIST_LIST="${quadratic_list_Y_LIST_LIST} ${quadratic_list_Y_LIST}"
+    done
+
+    eval "${1}=\${quadratic_list_Y_LIST_LIST}"
+}
+
+# Print evaluation of quadratic.
+printf_quadratic() {
+
+    local HEADER="${1}"
+    local Y_LIST_LIST="${2}"
+    local FORMAT_FLAG="${3}"
+    local ROW
+    local Y_LIST
+    local Y
+    local Y_FORMATTED
+    local ROW_FORMAT
+    local ROW
+
+    # Compute number of key widths.
+    first Y_LISTUS "${Y_LIST_LIST}"
+    Y_LIST="`echo \"${Y_LISTUS}\" | tr \"_\" \" \"`"
+    length LEN "${Y_LIST}"
+
+    ROW_FORMAT="    |"
+    ROW_LINE="----+"
+    for W in `seq 1 ${LEN}`;
+    do
+	ROW_FORMAT="${ROW_FORMAT} %10d"
+	ROW_LINE="${ROW_LINE}-----------"
+	ROW="${ROW} ${W}"
+    done
+
+    tee_printf "\n${HEADER}\n"
+
+    tee_printf "${ROW_FORMAT}\n" ${ROW}
+    tee_printf "%s\n" "${ROW_LINE}"
+
+    local K=1
+    for Y_LISTUS in ${Y_LIST_LIST};
+    do
+
+	Y_LIST="`echo \"${Y_LISTUS}\" | tr \"_\" \" \"`"
+	ROW_FORMAT="%3d |"
+	ROW=${K}
+
+	for Y in ${Y_LIST};
+	do
+
+	    if test ${FORMAT_FLAG} = "ms";
+	    then
+		secs Y_FORMATTED ${Y}
+	    elif test ${FORMAT_FLAG} = "B";
+	    then
+		hb Y_FORMATTED ${Y}
+		Y_FORMATTED=`echo "${Y_FORMATTED}" | tr " " "_"`
+	    else
+		echo "Illegal format flag!"
+		exit
+	    fi
+
+	    ROW_FORMAT="${ROW_FORMAT} %10s"
+	    ROW="${ROW} ${Y_FORMATTED}"
+
+	done
+
+	PRINT_ROW=`printf "${ROW_FORMAT}\n" ${ROW} | tr "_" " "`
+
+	tee_printf "%s\n" "${PRINT_ROW}"
+
+	K=`echo "${K} + 1" | bc`
+    done    
+}
+
+
+#####################################################################
+######## Commands used to extract data from log files ###############
+#####################################################################
+
+# Extracts the effective execution time with the given index in the
+# given file. The output is given in milliseconds.
+effective_ms() {
+    local effective_ms_RES
+    local effective_ms_LOGFILE
+    local effective_ms_INDEX
+
+    effective_ms_LOGFILE="${2}"
+    effective_ms_INDEX="${3}"
+
+    effective_ms_RES=`cat ${effective_ms_LOGFILE} | grep -E "\- Effective.*" | sed "s/- Effective\s*//" | sed "s/[[:digit:]]*h\s*[[:digit:]]*m\s*[[:digit:]]*s//" | sed "s/\s*//" | sed "${effective_ms_INDEX}!d"`
+
+    eval "${1}=\${effective_ms_RES}"
+}
+
+# Extracts the effective execution time with the given index in the
+# given file. The output is given in seconds with 2 decimals.
+effective_secs() {
+    local effective_secs_LOGFILE
+    local effective_secs_INDEX
+    local effective_secs_MS
+    local effective_secs_RES
+
+    effective_secs_LOGFILE="${2}"
+    effective_secs_INDEX="${3}"
+
+    effective_ms effective_secs_MS ${effective_secs_LOGFILE} ${effective_secs_INDEX}
+    arithm effective_secs_RES "${effective_secs_MS} / 1000"
+
+    effective_secs_RES=`printf "%.2f" "${effective_secs_RES}"`
+    eval "${1}=\${effective_secs_RES}"
+}
+
+# Extracts the total number of bytes communicated.
+total_bytes() {
+    local total_bytes_LOGFILE
+    local total_bytes_INDEX
+    local total_bytes_RES
+
+    total_bytes_LOGFILE="${2}"
+    total_bytes_INDEX="${3}"
+
+    total_bytes_RES=`cat ${total_bytes_LOGFILE} | grep -E "\- Total.*" | sed "s/- Total.\s*//" | sed "s/[[:digit:]]*\.[[:digit:]]*\s*\S\S*\s*//" | sed "${total_bytes_INDEX}!d"`
+
+    eval "${1}=\${total_bytes_RES}"
+}
+
+# Extracts the total number of bytes communicated in human readable
+# form using the postfix: B, KB, MB, and GB as appropriate.
+total_bytes_h() {
+    local total_bytes_h_LOGFILE
+    local total_bytes_h_INDEX
+    local total_bytes_h_B
+    local total_bytes_h_HB
+
+    total_bytes_h_LOGFILE="${2}"
+    total_bytes_h_INDEX="${3}"
+
+    total_bytes total_bytes_h_B ${total_bytes_h_LOGFILE} ${total_bytes_h_INDEX}
+    hb total_bytes_h_HB ${total_bytes_h_B}
+
+    eval "${1}=\${total_bytes_h_HB}"
+}
+
+# Extracts the running time of the verifier in milliseconds.
+completed_ms() {
+    local completed_ms_LOGFILE
+    local completed_ms_INDEX
+    local completed_ms_MS
+
+    completed_ms_LOGFILE="${2}"
+    completed_ms_INDEX="${3}"
+
+    completed_ms_MS=`cat ${completed_ms_LOGFILE} | grep -E "Completed verification.*" | sed "s/Completed verification after\s*//" | sed "s/[[:digit:]]*h\s*[[:digit:]]*m\s*[[:digit:]]*s//" | sed "s/\s*//" | sed "s/(\([[:digit:]]*\)\s*ms)./\1/" | sed "${completed_ms_INDEX}!d"`
+
+    eval "${1}=\${completed_ms_MS}"
+}
+
+# Extracts the running time of the verifier in seconds.
+completed_secs() {
+    local completed_secs_LOGFILE
+    local completed_secs_INDEX
+    local completed_secs_MS
+    local completed_secs_RES
+
+    completed_secs_LOGFILE="${2}"
+    completed_secs_INDEX="${3}"
+
+    completed_ms completed_secs_MS ${completed_secs_LOGFILE} ${completed_secs_INDEX}
+    arithm completed_secs_RES "${completed_secs_MS} / 1000"
+    completed_secs_RES=`printf "%.2f" "${completed_secs_RES}"`
+
+    eval "${1}=\${completed_secs_RES}"
+}
+
+# Extracts the size of the Fiat-Shamir proof.
+size_bytes() {
+    local size_bytes_LOGFILE
+    local size_bytes_INDEX
+    local size_bytes_RES
+
+    size_bytes_LOGFILE="${2}"
+    size_bytes_INDEX="${3}"
+
+    size_bytes_RES=`cat ${size_bytes_LOGFILE} | grep -E "Proof size is.*" | sed "s/.*\(K\|M\|G\)B\s*(\([[:digit:]]*\).*/\2/" | sed "${size_bytes_INDEX}!d"`
+
+    eval "${1}=\${size_bytes_RES}"
+}
+
+# Extracts the size of the Fiat-Shamir proof in human readable form
+# using postfix B, KB, MB, and GB as appropriate.
+size_bytes_h() {
+    local size_bytes_h_LOGFILE
+    local size_bytes_h_INDEX
+    local size_bytes_h_RES
+
+    size_bytes_h_LOGFILE="${2}"
+    size_bytes_h_INDEX="${3}"
+
+    size_byte size_bytes_h_RES ${size_bytes_h_LOGFILE} ${size_bytes_h_INDEX}
+    hb size_bytes_h_RES ${size_bytes_h_RES}
+
+    eval "${1}=\${size_bytes_h_RES}"
+}
+
+
+#####################################################################
+######## Commands used to extract data from log files ###############
+#####################################################################
+
+benchmarksize() {
+
+    printf "BENCH_BENCHMARKSIZE" > tmp_benchmarksize
+    BENCHMARKSIZE=`cat benchmarks/bench_config tmp_benchmarksize | m4 | tr "\n" " " | sed "s/\s*\(\S\S*\)\s*/\1/"`
+    rm -f tmp_benchmarksize
+
+    eval "${1}=\${BENCHMARKSIZE}"
+}
+
+generate_conf() {
+    CONF_COMMAND="cat benchmarks/bench_config ${1}_template | m4 ${2} > conf"
+    eval "${CONF_COMMAND}"
+}
+
+#
+store_results() {
+
+    local RESULT_DIR="benchresults/${1}"
+
+    if !( test -f ${RESULT_DIR} );
+    then
+	mkdir -p ${RESULT_DIR}
+
+	cp conf ${RESULT_DIR}/
+
+	cp demo_log ${RESULT_DIR}/
+
+	cp vmn_log ${RESULT_DIR}/
+
+	if test -f vmnv_log;
+	then
+	    cp vmnv_log ${RESULT_DIR}/
+	fi
+    fi
+}

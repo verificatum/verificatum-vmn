@@ -1,0 +1,123 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+# Show that the running time of mixing equals the sum of the running
+# times of shuffling and decrypting.
+
+BENCH=${0}
+
+. benchmarks/benchmacros
+
+benchmarksize BENCHMARKSIZE
+
+NO_CIPHERTEXTS=`echo "${BENCHMARKSIZE} * 1000" | bc`
+
+FILTER=" | sed -e \"s/BENCH_LOCAL_NO_CIPHERTEXTS/${NO_CIPHERTEXTS}/\" "
+    
+generate_conf "${BENCH}" "${FILTER}"
+
+./demointro
+./info_files
+./keygen
+./gen_ciphs
+./mix
+./verify
+./delete
+./shuffle
+./verify
+./delete
+./decrypt
+./verify
+./fetch_vmn_log
+./demoend
+
+
+# Extract running times.
+effective_secs SECS_MIXING vmn_log 2
+effective_secs SECS_SHUFFLING vmn_log 3
+effective_secs SECS_DECRYPTION vmn_log 4
+
+completed_secs SECS_VERIFY_MIXING vmnv_log 1
+completed_secs SECS_VERIFY_SHUFFLING vmnv_log 2
+completed_secs SECS_VERIFY_DECRYPTION vmnv_log 3
+
+arithm SECS_SHUFFLING_DECRYPTION "${SECS_SHUFFLING} + ${SECS_DECRYPTION}"
+arithm SECS_VERIFY_SHUFFLING_DECRYPTION "${SECS_VERIFY_SHUFFLING} + ${SECS_VERIFY_DECRYPTION}"
+
+# Extract communication and proof size.
+total_bytes B_MIXING vmn_log 2
+total_bytes B_SHUFFLING vmn_log 3
+total_bytes B_DECRYPTION vmn_log 4
+
+size_bytes B_VERIFY_MIXING vmnv_log 1
+size_bytes B_VERIFY_SHUFFLING vmnv_log 2
+size_bytes B_VERIFY_DECRYPTION vmnv_log 3
+
+arithm B_SHUFFLING_DECRYPTION "${B_SHUFFLING} + ${B_DECRYPTION}"
+arithm B_VERIFY_SHUFFLING_DECRYPTION "${B_VERIFY_SHUFFLING} + ${B_VERIFY_DECRYPTION}"
+
+# Convert to human readable form.
+hb HB_MIXING ${B_MIXING}
+hb HB_SHUFFLING ${B_SHUFFLING}
+hb HB_DECRYPTION ${B_DECRYPTION}
+
+hb HB_VERIFY_MIXING ${B_VERIFY_MIXING}
+hb HB_VERIFY_SHUFFLING ${B_VERIFY_SHUFFLING}
+hb HB_VERIFY_DECRYPTION ${B_VERIFY_DECRYPTION}
+
+hb HB_SHUFFLING_DECRYPTION ${B_SHUFFLING_DECRYPTION}
+hb HB_VERIFY_SHUFFLING_DECRYPTION ${B_VERIFY_SHUFFLING_DECRYPTION}
+
+# Print results.
+tee_printf "RESULTS\n"
+printeqbar
+
+tee_print_abstract \
+"Shows that the running times of shuffling and decryption adds to
+approximately the running time of mixing. Furthermore, the
+communication of shuffling and decryption adds approximately to the
+communication of mixing. Similarly, the sizes of the proofs of
+shuffling and decryption adds approximately to the size of the proof
+of mixing."
+
+tee_printf "%15s   %s\n" "Secs:" "Operation ($NO_CIPHERTEXTS ciphertexts):"  
+tee_printf "%15s   %s\n" ${SECS_SHUFFLING} "Shuffling"
+tee_printf "%15s   %s\n" ${SECS_DECRYPTION} "Decryption"
+tee_printf "%15s   %s\n" ${SECS_SHUFFLING_DECRYPTION} "Shuffling + Decryption"
+tee_printf "%15s   %s\n" ${SECS_MIXING} "Mixing"
+tee_printf "\n"
+tee_printf "%15s   %s\n" ${SECS_VERIFY_SHUFFLING} "Verifying shuffling"
+tee_printf "%15s   %s\n" ${SECS_VERIFY_DECRYPTION} "Verifying decryption"
+tee_printf "%15s   %s\n" ${SECS_VERIFY_SHUFFLING_DECRYPTION} "Verifying shuffling + Verifying decryption"
+tee_printf "%15s   %s\n" ${SECS_VERIFY_MIXING} "Verifying mixing"
+tee_printf "\n"
+tee_printf "%15s   %s\n" "Communication:" "Operation ($NO_CIPHERTEXTS ciphertexts):"  
+tee_printf "%15s   %s\n" "${HB_SHUFFLING}" "Shuffling"
+tee_printf "%15s   %s\n" "${HB_DECRYPTION}" "Decryption"
+tee_printf "%15s   %s\n" "${HB_SHUFFLING_DECRYPTION}" "Shuffling + Decryption"
+tee_printf "%15s   %s\n" "${HB_MIXING}" "Mixing"
+tee_printf "\n"
+tee_printf "%15s   %s\n" "Proof size:" "Operation ($NO_CIPHERTEXTS ciphertexts):"  
+tee_printf "%15s   %s\n" "${HB_VERIFY_SHUFFLING}" "Shuffling"
+tee_printf "%15s   %s\n" "${HB_VERIFY_DECRYPTION}" "Decryption"
+tee_printf "%15s   %s\n" "${HB_VERIFY_SHUFFLING_DECRYPTION}" "Shuffling + Decryption"
+tee_printf "%15s   %s\n" "${HB_VERIFY_MIXING}" "Mixing"
+
+printeqbar
+

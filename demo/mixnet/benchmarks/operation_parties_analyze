@@ -1,0 +1,231 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+BENCH=${1}
+OPERATION=${2}
+NO_CIPHERTEXTS=${3}
+
+. benchmarks/benchmacros
+
+. ./conf
+
+THRESHOLDS=`seq 1 ${NO_MIXSERVERS}`
+
+
+
+####################################################################
+########## Collect lists of results from benchmarks ################
+####################################################################
+
+E_LIST=""
+V_LIST=""
+
+C_LIST=""
+P_LIST=""
+
+for THRESHOLD in ${THRESHOLDS};
+do
+    completed_ms MS_VERIFY_SHUFFLING vmnv_log ${THRESHOLD}
+    V_LIST="${V_LIST} ${MS_VERIFY_SHUFFLING}"
+
+    size_bytes SIZE_BYTES "vmnv_log" ${THRESHOLD}
+    P_LIST="${P_LIST} ${SIZE_BYTES}"
+
+    TWICE_THRESHOLD=`echo "2 * ${THRESHOLD}" | bc`
+    effective_ms MS_SHUFFLING vmn_log ${TWICE_THRESHOLD}
+    E_LIST="${E_LIST} ${MS_SHUFFLING}"
+
+    total_bytes TOTAL_BYTES "vmn_log" ${TWICE_THRESHOLD}    
+    C_LIST="${C_LIST} ${TOTAL_BYTES}"
+
+done
+
+####################################################################
+########## Derive linear approximations of the data ################
+####################################################################
+
+# Derive affine polynomial.
+apxaffine E_SCALAR E_CONSTANT "${THRESHOLDS}" "${E_LIST}"
+affine_list SE_LIST "${E_SCALAR}" "${E_CONSTANT}" "${THRESHOLDS}"
+
+# Derive affine polynomial.
+apxaffine V_SCALAR V_CONSTANT "${THRESHOLDS}" "${V_LIST}"
+affine_list SV_LIST "${V_SCALAR}" "${V_CONSTANT}" "${THRESHOLDS}"
+
+# Derive affine polynomial.
+apxaffine C_SCALAR C_CONSTANT "${THRESHOLDS}" "${C_LIST}"
+affine_list SC_LIST "${C_SCALAR}" "${C_CONSTANT}" "${THRESHOLDS}"
+
+# Derive affine polynomial.
+apxaffine P_SCALAR P_CONSTANT "${THRESHOLDS}" "${P_LIST}"
+affine_list SP_LIST "${P_SCALAR}" "${P_CONSTANT}" "${THRESHOLDS}"
+
+
+
+####################################################################
+########## Print header and linear approximations ##################
+####################################################################
+
+tee_printf "\nRESULTS\n"
+printeqbar
+
+tee_print_abstract \
+"Shows how the running times E(lambda) and V(lambda) for ${OPERATION}
+and for verifying ${OPERATION}, respectively, grow with the threshold
+number lambda of parties, and similarly for the number of bytes of
+data communicated C(lambda), and the the size of Fiat-Shamir proofs
+P(lambda).
+
+Approximations of the functions E(lambda), V(lambda), C(lambda),
+and P(lambda):"
+
+# Print the approximate affine functions.
+tee_printf "    e(lambda) = %.3f * lambda  +  %.3f (ms)\n" ${E_SCALAR} ${E_CONSTANT}
+tee_printf "    v(lambda) = %.3f * lambda  +  %.3f (ms)\n" ${V_SCALAR} ${V_CONSTANT}
+tee_printf "\n"
+tee_printf "    c(lambda) = %.3f * lambda  +  %.3f (bytes)\n" ${C_SCALAR} ${C_CONSTANT}
+tee_printf "    p(lambda) = %.3f * lambda  +  %.3f (bytes)\n" ${P_SCALAR} ${P_CONSTANT}
+
+tee_printf "\n\n"
+
+
+####################################################################
+########## Print table of results ##################################
+####################################################################
+
+CAP_OPERATION=`echo ${OPERATION} | tr '[:lower:]' '[:upper:]'`
+
+CIPHSTRING="Parties:   "
+ESTRING="Executing:"
+VSTRING="Verifying:"
+CSTRING="Communication:"
+PSTRING="    Proof:"
+
+str_len CIPHSTRING_LEN "${CIPHSTRING}"
+CIPHSTRINGBAR=`echo "${CIPHSTRING}" | sed "s/./-/g"`
+
+str_len ESTRING_LEN "${ESTRING}"
+str_len VSTRING_LEN "${VSTRING}"
+
+str_len EVSTRING_LEN "${ESTRING}  ${VSTRING}"
+EVSTRINGBAR=`echo "${ESTRING}  ${VSTRING}" | sed "s/./-/g"`
+
+str_len CSTRING_LEN "${CSTRING}"
+str_len PSTRING_LEN "${PSTRING}"
+
+str_len CPSTRING_LEN "${CSTRING}  ${PSTRING}"
+CPSTRINGBAR=`echo "${CSTRING}  ${PSTRING}" | sed "s/./-/g"`
+
+TOP_FORMAT=\
+"%-${CIPHSTRING_LEN}s | %-${EVSTRING_LEN}s | %-${CPSTRING_LEN}s\n"
+FORMAT=\
+"%${CIPHSTRING_LEN}s | %${ESTRING_LEN}s  %${VSTRING_LEN}s | %${CSTRING_LEN}s  %${PSTRING_LEN}s\n"
+
+tee_printf "${TOP_FORMAT}" "${CAP_OPERATION}" "Time (sec)" "Data"
+tee_printf \
+    "${FORMAT}" "${CIPHSTRING}" "${ESTRING}" "${VSTRING}" "${CSTRING}" "${PSTRING}"
+
+tee_printf \
+    "%s-+-%s-+-%s\n" "${CIPHSTRINGBAR}" "${EVSTRINGBAR}" "${CPSTRINGBAR}"
+
+E_DELTA=0
+V_DELTA=0
+C_DELTA=0
+P_DELTA=0
+
+X_LIST="${THRESHOLDS}"
+
+length ITERATIONS "${X_LIST}"
+for x in `seq 1 ${ITERATIONS}`;
+do
+    pop X X_LIST "${X_LIST}"
+    commatized CX ${X}
+
+    pop E E_LIST "${E_LIST}"
+    pop SE SE_LIST "${SE_LIST}"
+    secs E_SECS ${E}
+
+    pop V V_LIST "${V_LIST}"
+    pop SV SV_LIST "${SV_LIST}"
+    secs V_SECS ${V}
+
+    pop C C_LIST "${C_LIST}"
+    pop SC SC_LIST "${SC_LIST}"
+    hb HC ${C}
+
+    pop P P_LIST "${P_LIST}"
+    pop SP SP_LIST "${SP_LIST}"
+    hb HP ${P}
+
+    tee_printf "${FORMAT}" "${CX}" "${E_SECS}" "${V_SECS}" "${HC}" "${HP}"
+
+    DIFF=`echo "${E} - ${SE}" | bc -l | tr -d "-"`    
+    E_DELTA_T=`echo "${DIFF} / ${E}" | bc -l`
+    max E_DELTA ${E_DELTA} ${E_DELTA_T}
+
+    DIFF=`echo "${V} - ${SV}" | bc -l | tr -d "-"`
+    V_DELTA_T=`echo "${DIFF} / ${V}" | bc -l`
+    max V_DELTA ${V_DELTA} ${V_DELTA_T}
+
+    DIFF=`echo "${C} - ${SC}" | bc -l | tr -d "-"`
+    C_DELTA_T=`echo "${DIFF} / ${C}" | bc -l`
+    max C_DELTA ${C_DELTA} ${C_DELTA_T}
+
+    DIFF=`echo "${P} - ${SP}" | bc -l | tr -d "-"`
+    P_DELTA_T=`echo "${DIFF} / ${P}" | bc -l`
+    max P_DELTA ${P_DELTA} ${P_DELTA_T}
+
+done
+
+rel E_DELTA_REL ${E_DELTA}
+rel V_DELTA_REL ${V_DELTA}
+rel C_DELTA_REL ${C_DELTA}
+rel P_DELTA_REL ${P_DELTA}
+
+
+tee_printf "
+Recall that E(lambda) and V(lambda) denote the execution time and
+verification time respectively in milliseconds on lambda
+ciphertexts. We bound the error of our approximations compared to the
+benchmark by:
+
+    |e(lambda) - E(lambda)| / E(lambda) <= ${E_DELTA_REL}
+    |v(lambda) - V(lambda)| / V(lambda) <= ${V_DELTA_REL}
+
+Furthermore, C(lambda) denotes the number of bytes communicated, and
+P(lambda) denotes the size in bytes of the proof of correctness. We
+bound the error of our approximations compared to the benchmark by:
+
+    |c(lambda) - C(lambda)| / C(lambda) <= ${C_DELTA_REL}
+    |p(lambda) - P(lambda)| / P(lambda) <= ${P_DELTA_REL}"
+
+tee_printf "\n"
+
+if test ${OPERATION} = "shuffling";
+then
+
+    tee_printf "
+The fact that the servers run on different hardware explains why the
+approximation of the execution time is not precise, i.e., when the
+threshold is increased machines with different hardwares are
+activated.\n"
+
+fi
+
+printeqbar

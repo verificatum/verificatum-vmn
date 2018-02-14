@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if test x$1 = x"bin";
+then
+    printf "M4_BINDIR"
+elif test x$1 = x"lib";
+then
+    printf "M4_LIBDIR"
+elif test x$1 = x"jar";
+then
+    printf "M4_ALL_JAR"
+elif test x$1 = x"version";
+then
+    printf "M4_VERSION"
+elif test x$1 = x"complete";
+then
+    printf "M4_COMPLETE_VERSION"
+else
+    printf "Illegal parameter! (%s)\n" $1
+fi

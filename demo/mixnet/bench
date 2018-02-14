@@ -1,0 +1,77 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+
+# Executes all benchmarks.
+
+. benchmarks/benchmacros
+
+BENCHMARKS="`{ cat benchmarks/bench_config; echo "BENCHMARKS"; } | m4`"
+
+echo "BENCH: ${BENCHMARKS}"
+
+middle_nohup_to_demo_log() {
+    local LOCAL_START_INDEX
+    local LOCAL_END_INDEX
+    local LOCAL_NEXT_START_INDEX
+
+    LOCAL_START_INDEX=${2}
+    LOCAL_START_INDEX=`echo "${LOCAL_START_INDEX} + 2" | bc`
+    LOCAL_END_INDEX=`wc -l nohup.out | sed "s/\([[:digit:]]*\) .*/\1/"`
+    LOCAL_NEXT_START_INDEX=`echo "${LOCAL_END_INDEX} + 1" | bc`
+
+    sed -n "${LOCAL_START_INDEX},${LOCAL_END_INDEX}p;${LOCAL_NEXT_START_INDEX}q" nohup.out > demo_log
+
+    eval "${1}=\${LOCAL_NEXT_START_INDEX}"
+}
+
+START_INDEX=1
+DOCLEAN=f
+
+for BENCHMARK in ${BENCHMARKS};
+do
+    if !( test -d benchresults/${BENCHMARK} );
+    then
+
+    	./clean
+
+    	beginbenchmark ${BENCHMARK}
+
+	benchmarks/${BENCHMARK} ${BENCHMARK}
+
+    	endbenchmark
+
+	# Due to a bug in the way redirection is implemented in the
+	# shell we have to do things like this when running remotely
+	# with nohup.
+	if test -f nohup.out;
+	then
+	    middle_nohup_to_demo_log START_INDEX ${START_INDEX}
+	fi
+
+    	store_results ${BENCHMARK}
+
+    	DOCLEAN=t
+    fi
+done
+
+if test ${DOCLEAN} = t;
+then
+    ./clean
+fi

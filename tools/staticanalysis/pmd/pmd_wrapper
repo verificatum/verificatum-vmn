@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+# The authors of PMD have not provided any installation program, so we
+# need this wrapper to give a clean Makefile.am. You can simply unpack
+# the pmd directory in your home directory.
+
+pmd_run_in_dir() {
+    RES=`ls -1 $2 | grep -v zip | grep -v tar.gz | sort | grep -E "pmd-bin-?\.?\.?" | tail -n 1`
+    eval "$1=\$2/\$RES/bin/run.sh"
+}
+
+
+pmd_run_in_dir PMD_RUN $PWD
+
+if test -f $PMD_RUN;
+then
+
+    $PMD_RUN pmd $@
+
+else
+
+    pmd_run_in_dir PMD_RUN $HOME
+
+    if test -f $PMD_RUN;
+    then
+
+	$PMD_RUN pmd $@
+
+    else
+
+	echo "Failed to find any pmd binary! Please consult Makefile.am for more information."
+
+	exit 1
+    fi
+fi
+
+exit 0

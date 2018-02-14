@@ -1,0 +1,99 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+###########################################################################
+################### Execute standalone verifier. ##########################
+###########################################################################
+
+. ./checkvmn
+
+. ./conf
+
+if test x$AUXSID = x;
+then
+    AUXSIDDIR=default
+else
+    AUXSIDDIR=$AUXSID
+fi
+
+if test x$SILENT = x;
+then
+    VERBOSE=-v
+else
+    VERBOSE=
+fi
+
+# Make sure we log everything.
+{
+
+if test $CORRECTNESS = "noninteractive"
+then
+
+    phasestart "Copying proof from Party01 (verifier is not executing yet)"
+
+    printf "
+rm -rf export
+mkdir export
+cd export
+cp -R ../dir/nizkp/$AUXSIDDIR .
+cp ../protInfo.xml .
+cd ..
+" > $TMP_COMMAND
+
+    cpevalat $TMP_COMMAND 1
+
+    # This convoluted way of invoking copyfrom is needed due to a bug
+    # in /bin/sh.
+    rm -rf export
+    bash -c "source conf; copyfrom 1 export ."
+
+    phaseend
+
+    phasestart "Verify Fiat-Shamir Proof"
+
+    # Make sure we log everything.
+    {
+
+	printf "\n"
+
+	vmnv -sloppy $VERBOSE -v -e -wd "/tmp/verificatum/$$" -a $ARRAYS export/protInfo.xml export/$AUXSIDDIR
+
+	EXITCODE=$?
+	rm -rf "/tmp/verificatum/$$"
+
+	test $EXITCODE = 0 || exit $EXITCODE
+
+    # Make sure we log everything.
+    } >> vmnv_log
+
+    phaseend
+
+else
+
+    printf "\nERROR!"
+    printf "You can not verify an execution that used *interactive* "
+    printf "zero-knowledge proofs. Please edit the CORRECTNESS variable"
+    printf "in the conf-file to try out *non-interactive* proofs in the"
+    printf "random oracle model.\n\n"
+
+fi
+
+# Make sure we log everything.
+} | tee -a demo_log
+

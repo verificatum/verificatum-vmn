@@ -1,0 +1,270 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+BENCH=${1}
+OPERATION=${2}
+NO_CIPHERTEXTS=${3}
+KEYWIDTH_LIST="${4}"
+WIDTH_LIST="${5}"
+
+. benchmarks/benchmacros
+
+
+
+####################################################################
+########## Collect lists of results from benchmarks ################
+####################################################################
+
+E_LIST_LIST=""
+V_LIST_LIST=""
+
+C_LIST_LIST=""
+P_LIST_LIST=""
+
+last MAX_WIDTH "${WIDTH_LIST}"
+
+for KEYWIDTH in ${KEYWIDTH_LIST};
+do
+
+    START_INDEX=`echo "(${KEYWIDTH} - 1) * ${MAX_WIDTH}" | bc`
+
+    E_LIST=""
+    V_LIST=""
+
+    C_LIST=""
+    P_LIST=""
+
+    for WIDTH in ${WIDTH_LIST};
+    do
+
+	INDEX=`echo "${START_INDEX} + ${WIDTH}" | bc`
+
+	completed_ms MS_VERIFY_EXECUTION vmnv_log ${INDEX}
+	V_LIST="${V_LIST}_${MS_VERIFY_EXECUTION}"
+
+	size_bytes SIZE_BYTES "vmnv_log" ${INDEX}
+	P_LIST="${P_LIST}_${SIZE_BYTES}"
+
+
+	TWICE_INDEX=`echo "2 * ${INDEX}" | bc`
+
+	effective_ms MS_EXECUTION vmn_log ${TWICE_INDEX}
+	E_LIST="${E_LIST}_${MS_EXECUTION}"
+
+	total_bytes TOTAL_BYTES "vmn_log" ${TWICE_INDEX}    
+	C_LIST="${C_LIST}_${TOTAL_BYTES}"
+
+    done
+
+    E_LIST_LIST="${E_LIST_LIST} ${E_LIST}"
+    V_LIST_LIST="${V_LIST_LIST} ${V_LIST}"
+
+    C_LIST_LIST="${C_LIST_LIST} ${C_LIST}"
+    P_LIST_LIST="${P_LIST_LIST} ${P_LIST}"
+
+done
+
+
+
+####################################################################
+########## Derive linear approximations of the data ################
+####################################################################
+
+first E_LISTUS_1 "${E_LIST_LIST}"
+E_LIST_1="`echo \"${E_LISTUS_1}\" | tr \"_\" \" \"`"
+
+first V_LISTUS_1 "${V_LIST_LIST}"
+V_LIST_1="`echo \"${V_LISTUS_1}\" | tr \"_\" \" \"`"
+
+first C_LISTUS_1 "${C_LIST_LIST}"
+C_LIST_1="`echo \"${C_LISTUS_1}\" | tr \"_\" \" \"`"
+
+first P_LISTUS_1 "${P_LIST_LIST}"
+P_LIST_1="`echo \"${P_LISTUS_1}\" | tr \"_\" \" \"`"
+
+# Derive affine polynomial.
+apxaffine E_SCALAR_1 E_CONSTANT_1 "${WIDTH_LIST}" "${E_LIST_1}"
+affine_list SE_LIST_1 "${E_SCALAR_1}" "${E_CONSTANT_1}" "${WIDTH_LIST}"
+
+# Derive affine polynomial.
+apxaffine V_SCALAR_1 V_CONSTANT_1 "${WIDTH_LIST}" "${V_LIST_1}"
+affine_list SV_LIST_1 "${V_SCALAR_1}" "${V_CONSTANT_1}" "${WIDTH_LIST}"
+
+# Derive affine polynomial.
+apxaffine C_SCALAR_1 C_CONSTANT_1 "${WIDTH_LIST}" "${C_LIST_1}"
+affine_list SC_LIST_1 "${C_SCALAR_1}" "${C_CONSTANT_1}" "${WIDTH_LIST}"
+
+# Derive affine polynomial.
+apxaffine P_SCALAR_1 P_CONSTANT_1 "${WIDTH_LIST}" "${P_LIST_1}"
+affine_list SP_LIST_1 "${P_SCALAR_1}" "${P_CONSTANT_1}" "${WIDTH_LIST}"
+
+# Scale values to kilobytes.
+C_SCALAR_1_KB=`echo "${C_SCALAR_1} / 1000" | bc -l`
+C_CONSTANT_1_KB=`echo "${C_CONSTANT_1} / 1000" | bc -l`
+
+P_SCALAR_1_KB=`echo "${P_SCALAR_1} / 1000" | bc -l`
+P_CONSTANT_1_KB=`echo "${P_CONSTANT_1} / 1000" | bc -l`
+
+
+second E_LISTUS "${E_LIST_LIST}"
+E_LIST="`echo \"${E_LISTUS}\" | tr \"_\" \" \"`"
+
+second V_LISTUS "${V_LIST_LIST}"
+V_LIST="`echo \"${V_LISTUS}\" | tr \"_\" \" \"`"
+
+second C_LISTUS "${C_LIST_LIST}"
+C_LIST="`echo \"${C_LISTUS}\" | tr \"_\" \" \"`"
+
+second P_LISTUS "${P_LIST_LIST}"
+P_LIST="`echo \"${P_LISTUS}\" | tr \"_\" \" \"`"
+
+# Derive affine polynomial.
+apxaffine E_SCALAR E_CONSTANT "${WIDTH_LIST}" "${E_LIST}"
+affine_list SE_LIST "${E_SCALAR}" "${E_CONSTANT}" "${WIDTH_LIST}"
+E_SCALAR=`echo "${E_SCALAR} / 2" | bc -l`
+
+# Derive affine polynomial.
+apxaffine V_SCALAR V_CONSTANT "${WIDTH_LIST}" "${V_LIST}"
+affine_list SV_LIST "${V_SCALAR}" "${V_CONSTANT}" "${WIDTH_LIST}"
+V_SCALAR=`echo "${V_SCALAR} / 2" | bc -l`
+
+# Derive affine polynomial.
+apxaffine C_SCALAR C_CONSTANT "${WIDTH_LIST}" "${C_LIST}"
+affine_list SC_LIST "${C_SCALAR}" "${C_CONSTANT}" "${WIDTH_LIST}"
+C_SCALAR=`echo "${C_SCALAR} / 2" | bc -l`
+
+# Derive affine polynomial.
+apxaffine P_SCALAR P_CONSTANT "${WIDTH_LIST}" "${P_LIST}"
+affine_list SP_LIST "${P_SCALAR}" "${P_CONSTANT}" "${WIDTH_LIST}"
+P_SCALAR=`echo "${P_SCALAR} / 2" | bc -l`
+
+# Scale values to kilobytes.
+C_SCALAR_KB=`echo "${C_SCALAR} / 1000" | bc -l`
+C_CONSTANT_KB=`echo "${C_CONSTANT} / 1000" | bc -l`
+
+P_SCALAR_KB=`echo "${P_SCALAR} / 1000" | bc -l`
+P_CONSTANT_KB=`echo "${P_CONSTANT} / 1000" | bc -l`
+
+
+
+####################################################################
+########## Print header and linear approximations ##################
+####################################################################
+
+tee_printf "\nRESULTS\n"
+printeqbar
+
+tee_print_abstract \
+"Shows that the running times E(kappa,omega) and V(kappa,omega) for
+${OPERATION} of ${NO_CIPHERTEXTS} ciphertexts grow linearly both with
+the key width kappa and the width omega of ciphertexts, and that bytes
+of data communicated C(kappa,omega) and Fiat-Shamir proof size
+P(kappa,omega) grow linearly with both kappa and width.
+
+Approximations of the functions E(kappa,omega), V(kappa,omega),
+C(kappa,omega), and P(kappa,omega):"
+
+# Print the approximate affine functions.
+tee_printf "if (kappa = 1 or omega = 1) {\n\n"
+tee_printf "    e(kappa,omega) = %.3f * kappa * omega  +  %.3f (ms)\n" ${E_SCALAR_1} ${E_CONSTANT_1}
+tee_printf "    v(kappa,omega) = %.3f * kappa * omega  +  %.3f (ms)\n" ${V_SCALAR_1} ${V_CONSTANT_1}
+
+tee_printf "\n} else {\n\n"
+
+tee_printf "    e(kappa,omega) = %.3f * kappa * omega  +  %.3f (ms)\n" ${E_SCALAR} ${E_CONSTANT}
+tee_printf "    v(kappa,omega) = %.3f * kappa * omega  +  %.3f (ms)\n" ${V_SCALAR} ${V_CONSTANT}
+
+tee_printf "}"
+
+tee_printf "
+The need for two bilinear maps is due to how group elements are
+represented. The two cases kappa = 1 or omega = 1 are handled with
+trees of depth 1, whereas kappa,omega > 1 requires a tree of depth 2."
+
+tee_printf "\n\n"
+tee_printf "    c(kappa,omega) = %.1f * kappa * omega  +  %.3f (KB)\n" ${C_SCALAR_KB} ${C_CONSTANT_KB}
+tee_printf "    p(kappa,omega) = %.1f * kappa * omega  +  %.3f (KB)\n" ${P_SCALAR_KB} ${P_CONSTANT_KB}
+
+
+
+####################################################################
+########## Compute simulated outputs ###############################
+####################################################################
+
+quadratic_list SE_LIST_LIST ${E_SCALAR_1} ${E_CONSTANT_1} ${E_SCALAR} ${E_CONSTANT} "${KEYWIDTH_LIST}" "${WIDTH_LIST}"
+E_LISTLIST=`echo "${E_LIST_LIST}" | sed "s/\_/\ /g"`
+SE_LISTLIST=`echo "${SE_LIST_LIST}" | sed "s/\_/\ /g"`
+find_maximum E_DELTA "${E_LISTLIST}" "${SE_LISTLIST}"
+rel E_DELTA_REL ${E_DELTA}
+
+quadratic_list SV_LIST_LIST ${V_SCALAR_1} ${V_CONSTANT_1} ${V_SCALAR} ${V_CONSTANT} "${KEYWIDTH_LIST}" "${WIDTH_LIST}"
+V_LISTLIST=`echo "${V_LIST_LIST}" | sed "s/\_/\ /g"`
+SV_LISTLIST=`echo "${SV_LIST_LIST}" | sed "s/\_/\ /g"`
+find_maximum V_DELTA "${V_LISTLIST}" "${SV_LISTLIST}"
+rel V_DELTA_REL ${V_DELTA}
+
+quadratic_list SC_LIST_LIST ${C_SCALAR_1} ${C_CONSTANT_1} ${C_SCALAR} ${C_CONSTANT} "${KEYWIDTH_LIST}" "${WIDTH_LIST}"
+C_LISTLIST=`echo "${C_LIST_LIST}" | sed "s/\_/\ /g"`
+SC_LISTLIST=`echo "${SC_LIST_LIST}" | sed "s/\_/\ /g"`
+find_maximum C_DELTA "${C_LISTLIST}" "${SC_LISTLIST}"
+rel C_DELTA_REL ${C_DELTA}
+
+quadratic_list SP_LIST_LIST ${P_SCALAR_1} ${P_CONSTANT_1} ${P_SCALAR} ${P_CONSTANT} "${KEYWIDTH_LIST}" "${WIDTH_LIST}"
+P_LISTLIST=`echo "${P_LIST_LIST}" | sed "s/\_/\ /g"`
+SP_LISTLIST=`echo "${SP_LIST_LIST}" | sed "s/\_/\ /g"`
+find_maximum P_DELTA "${P_LISTLIST}" "${SP_LISTLIST}"
+rel P_DELTA_REL ${P_DELTA}
+
+
+
+####################################################################
+########## Print data ##############################################
+####################################################################
+
+tee_printf "\n"
+printf_quadratic "Execution (ms)" "${E_LIST_LIST}" "ms"
+printf_quadratic "Verification (ms)" "${V_LIST_LIST}" "ms"
+
+tee_printf "
+Recall that E(kappa,omega) and V(kappa,omega) denote the actual
+execution time and verification time respectively in milliseconds on
+${NO_CIPHERTEXTS} ciphertexts. We bound the error of our
+approximations compared to the benchmark by:
+
+    |e(kappa,omega) - E(kappa,omega)| / E(kappa,omega) <= ${E_DELTA_REL}
+    |v(kappa,omega) - V(kappa,omega)| / V(kappa,omega) <= ${V_DELTA_REL}"
+
+tee_printf "\n\n"
+printf_quadratic "Communication" "${C_LIST_LIST}" "B"
+printf_quadratic "Proof size" "${P_LIST_LIST}" "B"
+
+tee_printf "
+Recall that C(kappa,omega) denotes the number of bytes communicated,
+and P(kappa,omega) denotes the size in bytes of the Fiat-Shamir proof
+of correctness, on ${NO_CIPHERTEXTS} ciphertexts. We bound the error
+of our approximations compared to the benchmark by:
+
+    |c(kappa,omega) - C(kappa,omega)| / C(kappa,omega) <= ${C_DELTA_REL}
+    |p(kappa,omega) - P(kappa,omega)| / P(kappa,omega) <= ${P_DELTA_REL}"
+
+
+tee_printf "\n"
+
+
+printeqbar

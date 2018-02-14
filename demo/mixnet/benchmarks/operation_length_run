@@ -1,0 +1,60 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+BENCH=${1}
+OPERATION=${2}
+LENGTHS="${3}"
+
+. ./conf
+. benchmarks/benchmacros
+
+generate_conf "${BENCH}"
+
+./demointro
+./info_files
+./keygen
+
+for LENGTH in ${LENGTHS};
+do
+
+    ./delete
+
+    FILTER=" | sed -e \"s/BENCH_LOCAL_NO_CIPHERTEXTS/${LENGTH}/\" "
+
+    generate_conf "${BENCH}" "${FILTER}"
+
+    ./gen_ciphs
+
+    if test ${OPERATION} = "mixing";
+    then
+	./mix
+    elif test ${OPERATION} = "shuffling";
+    then
+	./shuffle
+    elif test ${OPERATION} = "decryption";
+    then
+	./decrypt
+    else
+	echo "Unknown operation \"${OPERATION}\"!"
+    fi
+
+    ./fetch_vmn_log
+    ./verify
+
+done

@@ -1,0 +1,149 @@
+
+CHECK_ENV='. ./check_env &> /dev/null'
+$CHECK_ENV
+
+NO_MIXSERVERS=
+THRESHOLD=
+MAX_NO_CIPHERTEXTS=
+FORCED_MAX_NO_CIPHERTEXTS=
+NO_CIPHERTEXTS=
+PGROUP=
+CORRECTNESS=
+WIDTH=
+FORCED_WIDTH=
+KEYWIDTH=
+INTER=
+HASH=
+SIG=
+RAND=
+ARRAY=
+
+
+if test $CHECK = threshold1;
+then
+    NO_MIXSERVERS=1
+    THRESHOLD=1
+elif test $CHECK = thresholdlarge;
+then
+    NO_MIXSERVERS=7
+    THRESHOLD=4
+else
+    NO_MIXSERVERS=3
+    THRESHOLD=2
+fi
+
+DEFAULT_PREFIX=mydemodir
+
+if test $CHECK = maxciph;
+then
+    MAX_NO_CIPHERTEXTS=200
+fi
+
+if test $CHECK = forcedmaxciph;
+then
+    MAX_NO_CIPHERTEXTS=200
+    FORCED_MAX_NO_CIPHERTEXTS=300
+fi
+
+if test $CHECK = manyciphs;
+then
+    NO_CIPHERTEXTS=10000
+else
+    NO_CIPHERTEXTS=100
+fi
+
+if test $CHECK = fixed -o $CHECK = json -o $CHECK = jsondecode;
+then
+    PGROUP=$(vog -gen ModPGroup -fixed 512)
+else
+    PGROUP=$(vog -gen ECqPGroup -name "P-224")
+fi
+
+if test $CHECK = interactive;
+then
+    CORRECTNESS=interactive
+else
+    CORRECTNESS=noninteractive
+fi
+
+if test $CHECK = width;
+then
+    WIDTH=3
+fi
+
+if test $CHECK = forcedwidth;
+then
+    FORCED_WIDTH=3
+fi
+
+if test $CHECK = keywidth31;
+then
+    KEYWIDTH=3
+fi
+
+if test $CHECK = keywidth32;
+then
+    KEYWIDTH=3
+    WIDTH=2
+fi
+
+if test $CHECK = raw;
+then
+    INTER=raw
+elif test $CHECK = json;
+then
+    INTER=json
+elif test $CHECK = jsondecode;
+then
+    INTER=jsondecode
+else
+    INTER=native
+fi
+
+if test $CHECK = provablehash;
+then
+    HASH=PROVABLE
+else
+    HASH=STANDARD
+fi
+
+if test $CHECK = provableprg;
+then
+    PRG=$(vog -gen PRGElGamal -fixed 512)
+else
+    PRG=SHA-256
+fi
+
+if test $CHECK = provablehash;
+then
+    RAND=$(vog -gen PRGElGamal -fixed 2048)
+elif test $CHECK = provablehash;
+then
+    RAND=$(vog -gen PRGHeuristic)
+else
+    RAND=$(vog -gen RandomDevice /dev/urandom)
+fi
+
+if test $CHECK = ram;
+then
+    ARRAYS=ram
+else
+    ARRAYS=file
+fi
+
+###########################################################################
+###########################################################################
+
+HINTOFFSET=4040
+HTTPOFFSET=8040
+HINTLOFFSET=4040
+HTTPLOFFSET=8040
+DATE_BIN=/bin/date
+TMP_COMMAND=./tmp_command
+TMP_FILE=./tmp_file
+TERM=./vterm
+SLEEPTIME=0
+SILENT=-s
+
+
+. ./macros

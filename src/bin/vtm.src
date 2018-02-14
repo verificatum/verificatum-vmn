@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+# Add the particular jar files we use.
+export CLASSPATH=M4_ALL_JAR
+
+# Add the location of the native libraries to the library variables.
+export LIBRARY_PATH=M4_LIBDIR
+export LD_LIBRARY_PATH=M4_LIBDIR
+
+# Extract the name of this shell script without its path.
+COMMAND_NAME=$0
+COMMAND_NAME=${COMMAND_NAME##*/}
+
+java \
+M4_JVM_DATAMODEL \
+M4_JVM_MEMORY_SIZE \
+-Djava.security.egd=file:/dev/./urandom \
+com.verificatum.vmn.VMNTool "$COMMAND_NAME" "$@"
+
+if test $? = 2;
+then
+    eval "$@"
+fi

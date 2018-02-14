@@ -1,0 +1,316 @@
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+###########################################################################
+############# Configuration parameters below this line. ###################
+###########################################################################
+
+# Magic that allow us to execute the demo and check script before
+# installing Verificatum. We do not want to put junk like this in the
+# Verificatum environment file. This only makes sense when run
+# locally.  DO NOT EDIT THIS SEGMENT!
+
+CHECK_ENV='echo x > /dev/null'
+if test -f check_env;
+then
+    IS_LOCAL=`cat conf | grep -E "DEFAULT_USERNAME|MIXSERVER_HOSTS" | grep "\#"`
+
+    if test x"$IS_LOCAL" = x;
+    then
+	CHECK_ENV='. ./check_env &> /dev/null'
+	$CHECK_ENV
+    fi
+fi
+
+# Number of mix-servers used in the demonstration. If you specify
+# remote servers, you must make sure that this matches the number of
+# servers you specify.
+
+NO_MIXSERVERS=BENCH_NO_MIXSERVERS
+
+# Number of parties needed to violate privacy, i.e., the number of
+# parties needed to decrypt. This must be an integer between 1 and
+# NO_MIXSERVERS.
+
+THRESHOLD=BENCH_THRESHOLD
+
+# Default directory where the demonstration takes place. This
+# directory is created if it does not exist.
+
+DEFAULT_PREFIX=mydemodir
+
+# If you comment out DEFAULT_PREFIX you may define a separate prefix
+# for each server. Make sure that the number of definitions match
+# NO_MIXSERVERS above.
+
+#PREFIX_1=mydemodir1
+#PREFIX_2=mydemodir2
+#PREFIX_3=mydemodir3
+
+# If you are running the demonstration with the same user and remote
+# host for all mix-servers, then you can enter your username,
+# hostname, and SSL port here. This requires that you have set up
+# password-less login (see the README-file).
+#
+# These values are only used to configure the way the demo
+# orchestrates the other servers, i.e., it does not influence the
+# mix-servers themselves.
+#
+# If these variables are defined, then they take precedence over any
+# manually defined variables below. If you try this with your own
+# server (remotely, but actually locally), remember to look for the
+# prefixed party directories in the root of your home directory and
+# not in the current working directory.
+
+#DEFAULT_USERNAME=dog
+#DEFAULT_HOST=pitbull.csc.kth.se
+#DEFAULT_HOSTL=pitbull.csc.kth.se
+#DEFAULT_SSH_PORT=22
+
+# If you comment out the default variables above, then you may define
+# a particular username and hostname for each mix-server to
+# demonstrate. Make sure that the number of entries match the
+# NO_MIXSERVERS above and that the above default values are commented
+# out. For this to work you need to enable password-less login from
+# the orchestrating server to each remote server, but you do not need
+# to set up pairwise password-less login between the servers (see the
+# README-file)
+
+MIXSERVER_HOSTS_1=BENCH_MIXSERVER_HOSTS_1
+MIXSERVER_HOSTSL_1=BENCH_MIXSERVER_HOSTSL_1
+USERNAME_1=dog
+SSH_PORT_1=22
+
+MIXSERVER_HOSTS_2=BENCH_MIXSERVER_HOSTS_2
+MIXSERVER_HOSTSL_2=BENCH_MIXSERVER_HOSTSL_2
+USERNAME_2=dog
+SSH_PORT_2=22
+
+MIXSERVER_HOSTS_3=BENCH_MIXSERVER_HOSTS_3
+MIXSERVER_HOSTSL_3=BENCH_MIXSERVER_HOSTSL_3
+USERNAME_3=dog
+SSH_PORT_3=22
+
+MIXSERVER_HOSTS_4=BENCH_MIXSERVER_HOSTS_4
+MIXSERVER_HOSTSL_4=BENCH_MIXSERVER_HOSTSL_4
+USERNAME_4=dog
+SSH_PORT_4=22
+
+MIXSERVER_HOSTS_5=BENCH_MIXSERVER_HOSTS_5
+MIXSERVER_HOSTSL_5=BENCH_MIXSERVER_HOSTSL_5
+USERNAME_5=dog
+SSH_PORT_5=22
+
+MIXSERVER_HOSTS_6=BENCH_MIXSERVER_HOSTS_6
+MIXSERVER_HOSTSL_6=BENCH_MIXSERVER_HOSTSL_6
+USERNAME_6=dog
+SSH_PORT_6=22
+
+MIXSERVER_HOSTS_7=BENCH_MIXSERVER_HOSTS_7
+MIXSERVER_HOSTSL_7=BENCH_MIXSERVER_HOSTSL_7
+USERNAME_7=dog
+SSH_PORT_7=22
+
+# If you set the following variable specifying the number of
+# ciphertexts for which pre-computation is performed, then the value
+# will be stored in the protocol info file. Then when the
+# pre-computation phase is executed, this serves as the default.
+
+#MAX_NO_CIPHERTEXTS=200
+
+# Even if MAX_NO_CIPHERTEXTS is set, you can still set the following
+# variable to demonstrate the ability to override the default for a
+# given session by passing the "-maxciph" to vmni.
+
+#FORCED_MAX_NO_CIPHERTEXTS=300
+
+# Finally, the actual number of ciphertexts. You must define this to
+# be smaller than MAX_NO_CIPHERTEXTS and FORCED_MAX_NO_CIPHERTEXTS if
+# these variables have been set, but otherwise you can choose this
+# freely.
+
+NO_CIPHERTEXTS=BENCH_LOCAL_NO_CIPHERTEXTS
+
+# Several groups can be used, some of which only differ in how
+# messages are encoded into group elements. The default in Verificatum
+# is the standard elliptic curve P-256.
+#
+# Below we first list the implemented elliptic curve groups and then
+# examples of multiplicative groups modulo primes.
+#
+# Note that in native mode, P-224, P-256, and P-521 are faster than
+# other curves of the same size due to optimized C code borrowed from
+# the OpenSSL project.
+#
+# Note that all you need to do to use your own group implementation is
+# to subclass verificatum.arithm.BPGroup and
+# verificatum.arithm.BPGroupElement.
+
+PGROUP=BENCH_PGROUP
+
+# It is possible to use the mix-net and let the public key itself be
+# generated over a product group. This is equivalent to having
+# multiple keys.
+# KEYWIDTH=2
+KEYWIDTH=BENCH_LOCAL_KEYWIDTH
+
+# Use interactive proofs or non-interactive Fiat-Shamir proofs.
+
+#CORRECTNESS=interactive
+CORRECTNESS=noninteractive
+
+# If you set the following variable specifying the default width of
+# ciphertexts, then the value will be stored in the protocol info
+# file. (If you don't set it then it defaults to one.)
+#
+# Use this option and look at the plaintexts to see that they grow in
+# size and become larger than what can be embedded into a single group
+# element.
+
+WIDTH=BENCH_LOCAL_WIDTH
+
+# Even if WIDTH is set, you can still set the following variable to
+# demonstrate the ability to override the default for a given session
+# by passing the "-width" option to "vmn -precomp". Remember to
+# generate new ciphertexts of the right width if you use this.
+
+#FORCED_WIDTH=3
+
+# Choose the interface to the mix-net.
+#
+# Use "json" for JSON encoding for the public key, ciphertexts, and
+# plaintexts. It currently only works when using a subgroup of the
+# multiplicative group modulo a prime.
+#
+# Use "raw" for the internal format of Verificatum where the public
+# key is a byte tree, and the input and output are byte tree
+# representations of arrays of group elements. (Note that if you use
+# this form, the output will be a binary file. You can still inspect
+# it using the tool bt2json that prints a structured JSON
+# representation of the data.)
+#
+# Use "native" for a format where the the byte tree representation of
+# the public key is converted to a hexadecimal string, and the input
+# is a newline-separated file of hexadecimal encoded byte trees of
+# ciphertexts, and the output is a newline separated list of strings
+# decoded from the plaintext group elements according to the decoding
+# algorithm of the underlying group.
+
+#INTER=json
+#INTER=jsondecode
+INTER=raw
+#INTER=native
+
+# Determines the collision-resistant hashfunction used to implement
+# the Naor-Yung CCA2-secure cryptosystem. STANDARD gives SHA-512 (this
+# is also the default in Verificatum). Provable gives the
+# Merkle-Damgaard construction based on the Pedersen hashfunction in
+# the elliptic curve P-256 (see info_files for more details). Note
+# that we need the output of the hash function to be smaller than the
+# order of the group in which we are running Naor-Yung. The latter
+# group is hardcoded in info_files to P-521 (this is also the default
+# in Verificatum).
+
+#HASH=PROVABLE
+HASH=STANDARD
+
+# Determines the PRG used to derive "random" vectors used for
+# batching. You can use SHA-256, SHA-384, or SHA-512, or an instance
+# of verificatum.crypto.PRG. In the former cases "counter mode" is
+# used to generate the output.
+
+#PRG=$(vog -gen PRGElGamal -fixed 2048)
+PRG=SHA-256
+
+# Determines the source of randomness used during the protocol
+# execution. Use "vog -h" for more information.
+
+#RAND=$(vog -gen PRGElGamal -fixed 2048)
+#RAND=$(vog -gen PRGHeuristic)
+RAND=$(vog -gen RandomDevice /dev/urandom)
+
+# Keep arrays in RAM or on file. The memory requirements of the second
+# option is independent of the number of ciphertexts. The former
+# option should only be used for small number of ciphertexts.
+
+#ARRAYS=ram
+ARRAYS=file
+
+###########################################################################
+########### You should probably not change anything below this line #######
+###########################################################################
+
+# Offsets from which port numbers are derived. If you are running
+# multiple instances of the demo on the same physical machine, then
+# they need to use different offsets to allow all servers to run their
+# HTTP and hint servers.
+
+HINTOFFSET=4040
+HTTPOFFSET=8040
+
+# If a server is behind a NAT, then port forwarding is probably used
+# to expose the server. In this case the hostname/ip number and ports
+# are different for the other servers and on the local network. The
+# following offsets are used to generate local port numbers. Do not
+# change these unless you really have to, since the port numbers are
+# generated starting from these offsets, i.e., if you have a machine
+# behind a NAT, then changing the order of servers will change the
+# port numbers and you have to set up new maps in your router.
+
+HINTLOFFSET=4040
+HTTPLOFFSET=8040
+
+# Name of executable version of the standard Un*x date
+# program. Unfortunately, "date" does not necessarily invoke this
+# program on some Un*xes.
+
+DATE_BIN=/bin/date
+
+# Name of file on which commands are written. This file is repeatedly
+# overwritten, copied to a remote host, and executed during the demo.
+
+TMP_COMMAND=./tmp_command
+TMP_FILE=./tmp_file
+
+# The terminal program used to emulate each party. If you need to run
+# the demo remotely without an X server, you can set this to
+# vterm. The logging of all parties then end up (garbled) in your
+# login terminal, but you can of course inspect the actual log files
+# of each party using a separate login session. Turn off output by
+# uncommenting SILENT below.
+
+#TERM=./vterm
+TERM=BENCH_TERM
+
+# Keep the xterm-windows open for this time at the end of execution,
+# e.g., set it to 60 to see any potential error messages from the JVM
+# for one minute when debugging.
+
+SLEEPTIME=0
+
+# Uncomment to silence the commands such that no output is written to
+# stdout. Combined with using vterm above this can be used to run the
+# demo silently in a single terminal window without X.
+
+SILENT=BENCH_SILENT
+
+# Source macros. The definitions of these depend on the values of some
+# of the above variables. Make sure that this file always ends with
+# the line below.
+
+. ./macros

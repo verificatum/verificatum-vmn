@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+###########################################################################
+######################## Execute Demonstration. ###########################
+###########################################################################
+
+. ./checkvmn
+
+. ./conf
+
+# Remove remains of any previous demos.
+./clean
+
+# Print information about the demo.
+./demointro
+
+# Generate info-files.
+./info_files || exit $?
+
+# Execute joint key generation.
+./keygen || exit $?
+
+# We only perform precomputation if the maximal number of ciphertexts
+# is positive.
+if test x${MAX_NO_CIPHERTEXTS} != x;
+then
+
+    # Perform precomputation.
+    ./precomp || exit $?
+
+fi
+
+# Generate demo input ciphertexts.
+./gen_ciphs || exit $?
+
+# Execute the mixnet.
+./mix || exit $?
+
+if test $CORRECTNESS = "noninteractive"
+then
+    ./verify || exit $?
+fi
+
+./demoend

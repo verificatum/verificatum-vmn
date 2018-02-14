@@ -1,0 +1,181 @@
+<FindBugsFilter>
+
+<!--
+     <Match>
+       <Class name="com.foobar.ClassNotToBeAnalyzed" />
+     </Match>
+-->
+
+<!-- These classes implement abstract cryptographic protocols. Capital
+     letters are used for fields that correspond to mathematical
+     symbols. Thus, the following exclusions are required. -->
+     <Match>
+       <Class name="com.verificatum.protocol.hvzk.PoSBasicTW" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.hvzk.PoSCBasicTW" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.hvzk.CCPoSBasicW" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.elgamal.DistrElGamalSessionBasic" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.distr.IndependentGeneratorsBasicI" />
+       <Bug code="Nm" />
+     </Match>
+
+     <Match>
+       <Class name="com.verificatum.protocol.mixnet.MixNetElGamalSession" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.mixnet.ShufflerElGamalSession" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.hvzk.PoSCTW" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.hvzk.PoSTW" />
+       <Bug code="Nm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.protocol.elgamal.DistrElGamalSession" />
+       <Bug code="Nm" />
+     </Match>
+
+<!-- These classes relies on hashCode() implemented in PRing,
+     PRingElement, and PRingElementArray, and PGroup, PGroupElement,
+     PGroupElementArray. -->
+     <Match>
+       <Class name="com.verificatum.arithm.PField" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.PFieldElement" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.PFieldElementArray" />
+       <Bug code="HE" />
+     </Match>
+
+     <Match>
+       <Class name="com.verificatum.arithm.PPRing" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.PPRingElement" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.PPRingElementArray" />
+       <Bug code="HE" />
+     </Match>
+
+     <Match>
+       <Class name="com.verificatum.arithm.ModPGroup" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.ModPGroupElement" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.ModPGroupElementArray" />
+       <Bug code="HE" />
+     </Match>
+
+     <Match>
+       <Class name="com.verificatum.arithm.BPGroupElementArrayF" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.BPGroupElementArrayIM" />
+       <Bug code="HE" />
+     </Match>
+
+     <Match>
+       <Class name="com.verificatum.arithm.ECqPGroup" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.ECqPGroupElement" />
+       <Bug code="HE" />
+     </Match>
+
+     <Match>
+       <Class name="com.verificatum.arithm.PPGroup" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.PPGroupElement" />
+       <Bug code="HE" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.arithm.PPGroupElementArray" />
+       <Bug code="HE" />
+     </Match>
+
+<!-- Unsigned shift here is proper. -->
+     <Match>
+       <Class name="com.verificatum.arithm.SafePrimeTable" />
+       <Bug code="BSHIFT" />
+     </Match>
+
+<!-- Unread err field is proper here for subclasses. -->
+     <Match>
+       <Class name="com.verificatum.ui.Console" />
+       <Bug code="UrF" />
+     </Match>
+
+<!-- Unread locator field is proper here for future improved error
+     messages during parsing. -->
+     <Match>
+       <Class name="com.verificatum.ui.info.InfoParser" />
+       <Bug code="UrF" />
+     </Match>
+
+<!-- These classes must use streams with default encoding to mirror
+     System.out, System.in, and System.err. -->
+     <Match>
+       <Class name="com.verificatum.protocol.mixnet.MixNetElGamalTool" />
+       <Bug code="Dm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.ui.Log" />
+       <Bug code="Dm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.ui.gui.JConsole" />
+       <Bug code="Dm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.ui.gui.JConsoleInLinker" />
+       <Bug code="Dm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.ui.gui.JConsoleOutLinker" />
+       <Bug code="Dm" />
+     </Match>
+     <Match>
+       <Class name="com.verificatum.ui.gui.JTextualUI" />
+       <Bug code="Dm" />
+     </Match>
+
+<!-- In the testing classes we have static initialization methods that
+     are not thread safe. -->
+     <Match>
+       <Class name="com.verificatum.crypto.TestHashfunctionMerkleDamgaard" />
+       <Bug code="LI" />
+     </Match>
+
+
+</FindBugsFilter>

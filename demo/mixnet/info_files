@@ -1,0 +1,211 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+# Read configuration.
+
+# Make sure we log everything.
+{
+
+. ./checkvmn
+
+. ./conf
+
+phasestart "Generate info files"
+
+printf "\n"
+
+feedstart "Making directories of servers."
+
+# Make directories and copy seedfile.
+for i in `seq 1 $NO_MIXSERVERS`
+do
+    mkdirat $i
+done
+
+feedend
+
+
+###########################################################################
+####### Generate protocol info file containing global parameters. #########
+###########################################################################
+
+maxciphcom MAXCIPHCOM $MAX_NO_CIPHERTEXTS
+widthcom WIDTHCOM $WIDTH
+keywidthcom KEYWIDTHCOM $KEYWIDTH
+
+feedstart "Generating protocol stub file"
+
+printf "
+vmni -prot \
+-sid 'MyDemo' \
+-name 'Swedish Election' \
+-nopart $NO_MIXSERVERS \
+-thres $THRESHOLD \
+$MAXCIPHCOM \
+-corr '$CORRECTNESS' \
+-prg '$PRG' \
+-pgroup '$PGROUP' \
+$WIDTHCOM \
+$KEYWIDTHCOM
+
+printf \$? > exitcode
+
+" > $TMP_COMMAND
+
+cpevalat "$TMP_COMMAND" 1
+
+wait
+checkexit 1
+
+feedend
+
+###########################################################################
+######## Share protocol info file containing global parameters. ###########
+###########################################################################
+for i in `seq 2 $NO_MIXSERVERS`
+do
+    getname NAME $i
+    feedstart "Copy stub file to $NAME"
+    copyfromto stub.xml 1 $i
+    feedend
+done
+
+###########################################################################
+######## Generate private and protocol info files of each party. ##########
+###########################################################################
+
+# Group over which Naor-Yung keys are defined. In the real protocol
+# each user can have its own group. The groups need not even be of the
+# same type. Note that this group must allow encoding arbitrary
+# messages. It is not acceptable to have a group with random mapping.
+
+CSGROUP=$(vog -gen ECqPGroup -name "P-521")
+
+for i in `seq 1 $NO_MIXSERVERS`
+do
+    getname NAME $i
+    feedstart "Generating private and protocol files of $NAME"
+
+    gethn HOST $i
+    HINTPORT=`expr $HINTOFFSET + $i`
+    HTTPPORT=`expr $HTTPOFFSET + $i`
+
+    gethnl HOSTL $i
+    HTTPPORTL=`expr $HTTPLOFFSET + $i`
+    HINTPORTL=`expr $HINTLOFFSET + $i`
+
+    # Use fixed seed for easy debugging.
+    copyto seedfile $i 
+
+    # Determines the hashfunction used to implement the cryptosystem
+    # and the signature scheme.
+    if test $HASH = "STANDARD";
+    then
+	printf "
+HASH=\$(vog -gen HashfunctionHeuristic SHA-512)" > $TMP_COMMAND
+    else
+	printf "
+HASHGROUP=\$(vog -gen ECqPGroup -name P-256)
+HASHFIXED=\$(vog -gen HashfunctionPedersen \"\$HASHGROUP\")
+HASH=\$(vog -gen HashfunctionMerkleDamgaard \"\$HASHFIXED\")" > $TMP_COMMAND
+    fi
+
+    printf "
+SSKEYGEN=\$(vog -gen SignatureKeyGenHeuristic 2048)" >> $TMP_COMMAND
+
+    getname NAME $i
+
+    getprotinfo PROTINFO $i
+
+    printf "
+CSKEYGEN=\$(vog -gen CryptoKeyGenNaorYung \"$CSGROUP\" \"\$HASH\")
+
+KEYPAIR=\$(vog -gen SignatureKeyPair \"\$SSKEYGEN\")
+PKEY=\$(vog -gen SignaturePKey \"\$KEYPAIR\")
+
+vmni -party \
+-e \
+-name \"$NAME\" \
+-keygen \"\$CSKEYGEN\" \
+-seed seedfile \
+-skey \"\$KEYPAIR\" \
+-pkey \"\$PKEY\" \
+-rand '$RAND' \
+-hint '$HOST:$HINTPORT' \
+-hintl '$HOSTL:$HINTPORTL' \
+-http 'http://$HOST:$HTTPPORT' \
+-httpl 'http://$HOSTL:$HTTPPORTL' \
+-arrays '$ARRAYS' && cp localProtInfo.xml \"$PROTINFO\"
+
+printf \$? > exitcode
+
+" >> $TMP_COMMAND
+
+    cpevalat $TMP_COMMAND $i
+
+    checkexit $i
+
+    feedend
+done
+
+###########################################################################
+######## Share protocol info file containing global parameters. ###########
+###########################################################################
+for i in `seq 1 $NO_MIXSERVERS`
+do
+    for j in `seq 1 $NO_MIXSERVERS`
+    do
+	if test $i != $j;
+	then
+
+	    getname NAMEi $i
+	    getname NAMEj $j
+	    getprotinfo PROTINFO $i
+	    feedstart "Copy protocol file of $NAMEi to $NAMEj"
+	    copyfromto $PROTINFO $i $j
+	    feedend
+	fi
+    done
+done
+
+###########################################################################
+###################### Merge protocol info files. #########################
+###########################################################################
+
+if test $NO_MIXSERVERS != 1;
+then
+
+    for i in `seq 1 $NO_MIXSERVERS`
+    do
+	getname NAME $i
+	feedstart "Merge protocol files to global protocol file at $NAME"
+	evalat "vmni -merge protInfo??.xml; printf \$? > exitcode" $i
+	checkexit $i
+	feedend
+    done
+else
+
+    evalat "cp protInfo01.xml protInfo.xml" 1
+
+fi
+
+phaseend
+
+# Make sure we log everything.
+} | tee -a demo_log

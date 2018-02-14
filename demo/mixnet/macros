@@ -1,0 +1,431 @@
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+
+cpu_string() {
+    STRING=`echo "$2" | sed -e "s/###.*//"`
+    eval "$1=\"\$STRING\""
+}
+
+os_string() {
+    STRING=`echo "$2" | sed -e "s/.*###\(.*\)###.*/\1/g"`
+    eval "$1=\"\$STRING\""
+}
+
+version_string() {
+    STRING=`echo "$2" | sed -e "s/.*###.*###//"`
+    eval "$1=\"\$STRING\""
+}
+
+cpu_os_version_at() {
+    getssh SSH ${2}
+    if test "$SSH" = "eval";
+    then
+	LOCAL=`vcpuosv`
+	eval "$1=\$LOCAL"
+    else
+	REMOTE=`$SSH 'vcpuosv 2>&1'`
+	eval "$1=\$REMOTE"
+    fi
+}
+
+# Apparently "seq" is not a standard Unix command, so we provide our
+# own.
+seq() { SEQ_LIST= SEQ_COUNTER=$1
+
+    while [ $SEQ_COUNTER -le $2 ] ; do
+	SEQ_LIST="$SEQ_LIST $SEQ_COUNTER"
+	SEQ_COUNTER=$(expr $SEQ_COUNTER + 1 )
+    done
+
+    printf "$SEQ_LIST\n"
+}
+
+pset() {
+    eval "SSH_PORT_$1=\$2"
+}
+pget() {
+    eval "$1=\${SSH_PORT_$2}"
+}
+
+sset() {
+    eval "MIXSERVER_HOSTS_$1=\$2"
+}
+ssetl() {
+    eval "MIXSERVER_HOSTSL_$1=\$2"
+}
+sget() {
+    eval "$1=\${MIXSERVER_HOSTS_$2}"
+}
+
+uset() {
+    eval "USERNAME_$1=\$2"
+}
+uget() {
+    eval "$1=\${USERNAME_$2}"
+}
+
+
+copyto() {
+    getloc LOC ${2}
+    getprefix PREFIX ${2}
+    getname NAME ${2}
+    scp -q -o ConnectionAttempts=300 ${1} ${LOC}${PREFIX}/${NAME}/${3}
+}
+
+copyfrom() {
+    getloc LOC ${1}
+    getprefix PREFIX ${1}
+    getname NAME ${1}
+    scp -r -q -o ConnectionAttempts=300 ${LOC}${PREFIX}/${NAME}/${2} ${3}
+}
+
+copyfromto() {
+    getloc LOC ${2}
+    getprefix PREFIX ${2}
+    getname NAME ${2}
+    scp -q -o ConnectionAttempts=300 ${LOC}${PREFIX}/${NAME}/${1} $TMP_FILE
+
+    getloc LOC ${3}
+    getprefix PREFIX ${3}
+    getname NAME ${3}
+    scp -q -o ConnectionAttempts=300 $TMP_FILE ${LOC}${PREFIX}/${NAME}/${1}
+
+    rm -f $TMP_FILE
+}
+
+mkdirat() {
+    getssh SSH ${1}
+    getprefix PREFIX ${1}
+    getname NAME ${1}
+    eval "$SSH ''rm -rf ${PREFIX}/${NAME}''"
+    eval "$SSH ''mkdir -p ${PREFIX}/${NAME}''"
+}
+
+rmfrat() {
+    getssh SSH ${1}
+    getprefix PREFIX ${1}
+    getname NAME ${1}
+    eval "$SSH ''rm -rf ${PREFIX}''"
+}
+
+rmdirat() {
+    getssh SSH ${1}
+    getprefix PREFIX ${1}
+    getname NAME ${1}
+    if test $PREFIX = "."
+    then
+       eval "$SSH ''rm -rf ${PREFIX}/${NAME}''"
+    else
+       eval "$SSH ''rm -rf ${PREFIX}''"
+    fi
+}
+
+evalat() {
+    getssh SSH ${2}
+    getprefix PREFIX ${2}
+    getname NAME ${2}
+    if test x${3} = "x&";
+    then
+	DELIMITER="&"
+    else
+	DELIMITER=";"
+    fi
+    eval "$SSH '''$CHECK_ENV; cd ${PREFIX}/${NAME}; ${1}${DELIMITER} cd - > /dev/null'''"
+}
+
+cpevalat() {
+    chmod +x ${1}
+    copyto ${1} ${2}
+    evalat ${1} ${2} ${3}
+}
+
+maxciphcom() {
+
+    if !( test x${2} = x );
+    then
+	eval "$1=\"-maxciph ${2}\""
+    fi
+}
+
+widthcom() {
+
+    if !( test x${2} = x );
+    then
+	eval "$1=\"-width ${2}\""
+    fi
+}
+
+keywidthcom() {
+
+    if !( test x${2} = x );
+    then
+	eval "$1=\"-keywidth ${2}\""
+    fi
+}
+
+
+ERROR=f
+
+if test x$DEFAULT_USERNAME = x;
+then
+
+    if test x$MIXSERVER_HOSTS_1 = x;
+    then
+	REMOTE=f
+    elif test x$MIXSERVER_HOSTS_1 = xlocalhost;
+    then
+	REMOTE=f
+    else
+	for i in `seq 1 $NO_MIXSERVERS`;
+	do
+	    sget HOSTNAME $i
+	    uget USER $i
+	    pget SSH_PORT $i
+	    if test x$HOSTNAME = x -o x$USER = x -o x$SSH_PORT = x;
+	    then
+		printf "You have defined too few MIXSERVER_HOSTS_<n> or\n"
+		printf "USERNAME_<n> variables, or SSH_PORT_<n> variables,\n"
+		printf "where <n> is the sequence number. Please read the\n"
+		printf "instructions in the conf-file.\n"
+		ERROR=t
+	    fi
+	done
+	REMOTE=t
+    fi
+else
+    if test x$DEFAULT_HOST = x;
+    then
+	printf "DEFAULT_USERNAME is defined, but not DEFAULT_HOST!\n"
+	ERROR=t
+    else
+            # Hosts on which the servers are run.
+	for i in `seq 1 $NO_MIXSERVERS`
+	do
+	    sset $i $DEFAULT_HOST
+	    ssetl $i $DEFAULT_HOSTL
+	    uset $i $DEFAULT_USERNAME
+	    pset $i $DEFAULT_SSH_PORT
+	done
+
+	REMOTE=t
+    fi
+fi
+
+if test $ERROR = t;
+then
+    printf "There was a configuration error. Please read instructions in the\n"
+    printf "file 'conf'. Cowardly refusing to proceed with demonstration.\n"
+    printf "Exiting script...\n"
+    exit 1
+fi
+
+
+if test $REMOTE = t;
+then
+    getdesc() {
+	eval "$1=\${USERNAME_${2}}@\${MIXSERVER_HOSTS_${2}}"
+    }
+
+    getloc() {
+	eval "$1=\${USERNAME_${2}}@\${MIXSERVER_HOSTS_${2}}:"
+    }
+
+    getssh() {
+	eval "$1=\"ssh -t -q -p \${SSH_PORT_${2}} -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o ConnectionAttempts=300 \${USERNAME_${2}}@\${MIXSERVER_HOSTS_${2}}\""
+    }
+
+    gethn() {
+	eval "$1=\${MIXSERVER_HOSTS_${2}}"
+    }
+    gethnl() {
+	eval "$1=\${MIXSERVER_HOSTSL_${2}}"
+    }
+
+else
+    getdesc() {
+	eval "$1=localhost"
+    }
+
+    getloc() {
+	eval "$1="
+    }
+
+    getssh() {
+	eval "$1=eval "
+    }
+
+    gethn() {
+	eval "$1=localhost"
+    }
+    gethnl() {
+	eval "$1=localhost"
+    }
+fi
+
+
+if test x$DEFAULT_PREFIX = x;
+then
+
+    getprefix() {
+	eval "$1=\${PREFIX_$2}"
+    }
+
+else
+
+    getprefix() {
+	eval "$1=\${DEFAULT_PREFIX}"
+    }
+
+fi
+
+demofailed() {
+    printf "\n\nDemo command failed! Aborting.\n\n\n"
+}
+
+checkexit() {
+
+    copyfrom $1 exitcode .
+
+    EXITCODE=`cat exitcode`
+
+    if test $EXITCODE != 0;
+    then
+	printf "\nMost recent command executed at\n"
+	printf "Party $1 failed with exit code $EXITCODE.\n"
+	demofailed
+	exit $EXITCODE
+    fi
+}
+
+checkallexits() {
+
+    for i in `seq 1 $NO_MIXSERVERS`;
+    do
+	checkexit $i
+    done
+}
+
+getname() {
+    if test ${2} -lt 10;
+    then
+        eval "$1=Party0${2}"
+    else
+	eval "$1=Party${2}"
+    fi
+}
+
+getprotinfo() {
+    if test ${2} -lt 10;
+    then
+        eval "$1=protInfo0${2}.xml"
+    else
+	eval "$1=protInfo${2}.xml"
+    fi
+}
+
+phasestart() {
+    printf "$1... "
+}
+
+phaseend() {
+    printf "done.\n"
+}
+
+feedstart() {
+    printf "  $1..."
+}
+
+feedend() {
+    printf " done.\n"
+}
+
+demointro() {
+
+    VERSION_DIRECTOR=`vmn -version`
+
+    printf "\nEXECUTION OF EL GAMAL MIX-NET (VMN $VERSION_DIRECTOR)\n"
+    printf "%s\n" "----------------------------------------------------------------"
+    printf "Number of mix-servers:              %s\n" "$NO_MIXSERVERS"
+
+    printf "Min. number of honest mix-servers:  %s\n" "$THRESHOLD"
+
+    for i in `seq 1 $NO_MIXSERVERS`;
+    do
+	getdesc DESC ${i}
+	getname NAME ${i}
+
+	cpu_os_version_at CPU_OS_VERSION ${i}
+
+	cpu_string CPU_STRING "$CPU_OS_VERSION"
+	os_string OS_STRING "$CPU_OS_VERSION"
+	version_string VERSION "$CPU_OS_VERSION"
+
+	if !( test $VERSION = $VERSION_DIRECTOR );
+	then
+	    printf "\nDEMO FAILED: Mismatching version! ($VERSION != $VERSION_DIRECTOR)\n\n"
+	    exit
+	fi
+
+	printf "${NAME}:\n"
+	printf "   host: $DESC\n"
+	printf "    CPU: $CPU_STRING\n"
+	printf "     OS: $OS_STRING\n"
+    done
+
+    printf "\n"
+
+    printf "No. keys used in parallel:          $KEYWIDTH\n"
+
+    if !( test x$FORCED_WIDTH = x );
+    then
+	printf "No. ciphertexts mixed as a unit:    $FORCED_WIDTH\n"
+    elif !( test x$WIDTH = x );
+    then
+	printf "No. ciphertexts mixed as a unit:    $WIDTH\n"
+    else
+	printf "No. ciphertexts mixed as a unit:    1\n"
+    fi
+
+    if !( test x$FORCED_MAX_NO_CIPHERTEXTS = x );
+    then
+	printf "No. ciphertexts in precomp.:        $FORCED_MAX_NO_CIPHERTEXTS\n"
+    elif !( test x$MAX_NO_CIPHERTEXTS = x );
+    then
+	printf "No. ciphertexts in precomp.:        $MAX_NO_CIPHERTEXTS\n"
+    fi
+
+    printf "No. ciphertexts in mixing:          $NO_CIPHERTEXTS\n"
+
+
+    printf "\n"
+    printf "Group is:\n"
+    printf "$PGROUP\n"
+    printf "\n"
+    printf "Zero-knowledge proofs:              $CORRECTNESS\n"
+    printf "Mix-net interface:                  $INTER\n"
+    printf "Arrays are stored on:               $ARRAYS\n"
+
+    printf "%s\n" "----------------------------------------------------------------"
+}
+
+demoend() {
+
+    printf "%s\n" "----------------------------------------------------------------"
+    printf "EXECUTION COMPLETED\n\n"
+}

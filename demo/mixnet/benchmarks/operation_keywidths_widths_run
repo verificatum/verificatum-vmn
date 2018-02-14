@@ -1,0 +1,67 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+BENCH=${1}
+OPERATION=${2}
+NO_CIPHERTEXTS=${3}
+KEYWIDTH_LIST="${4}"
+WIDTH_LIST="${5}"
+
+. benchmarks/benchmacros
+
+for KEYWIDTH in ${KEYWIDTH_LIST};
+do
+
+    for WIDTH in ${WIDTH_LIST}
+    do
+
+	FILTER=" | sed -e \"s/BENCH_LOCAL_NO_CIPHERTEXTS/${NO_CIPHERTEXTS}/\" | sed -e \"s/BENCH_LOCAL_KEYWIDTH/${KEYWIDTH}/\" | sed -e \"s/BENCH_LOCAL_WIDTH/${WIDTH}/\" "
+    
+	generate_conf "${BENCH}" "${FILTER}"
+
+	. ./conf
+
+	./demointro
+	./info_files
+	./keygen
+
+	./gen_ciphs
+
+	if test ${OPERATION} = "shuffling";
+	then
+	    ./shuffle
+	elif test ${OPERATION} = "decryption";
+	then
+	    ./decrypt
+	else
+	    echo "Unknown operation \"${OPERATION}\"!"
+	fi
+
+	./verify
+
+	./fetch_vmn_log
+	cat vmn_log >> complete_vmn_log
+
+	./demoend
+
+    done
+done
+
+mv complete_vmn_log vmn_log
+

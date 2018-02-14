@@ -1,0 +1,50 @@
+#!/bin/sh
+
+# Copyright 2008-2018 Douglas Wikstrom
+#
+# This file is part of Verificatum Mix-Net (VMN).
+#
+# VMN is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# VMN is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+# Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public
+# License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+
+###########################################################################
+####################### Execute key generation. ###########################
+###########################################################################
+
+# Make sure we log everything.
+{
+
+. ./checkvmn
+
+. ./conf
+
+phasestart "Running distributed key generation"
+
+for i in `seq 1 $NO_MIXSERVERS`
+do
+    getssh SSH $i
+    getprefix PREFIX $i
+    getname NAME $i
+
+    $TERM -sl 1500 -T "$NAME (joint key generation)" -e "$SSH '''$CHECK_ENV && cd ${PREFIX}/${NAME} && vmn -keygen -e $SILENT publicKey && vmnc -pkey -outi $INTER publicKey publicKey_ext; printf \$? > exitcode; sleep $SLEEPTIME'''" &
+done
+
+# Wait until all servers have completed.
+wait
+
+checkallexits
+
+phaseend
+
+# Make sure we log everything.
+} | tee -a demo_log
