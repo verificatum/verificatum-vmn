@@ -120,19 +120,19 @@ $(BINDIR)/vmn-$(VERSION)-info: scriptmacros.m4 $(SRC_BINDIR)/vmn-info.src
 	cat scriptmacros.m4 $(SRC_BINDIR)/vmn-info.src | m4 > $(BINDIR)/vmn-$(VERSION)-info
 	chmod +x $(BINDIR)/vmn-$(VERSION)-info
 
-# On some OS the JVM requires the flag "-d64" to use the 64-bit
-# JVM. Since we are using native code, which on such machines is
-# native 64-bit, we get a dynamic linking error unless we set this
-# JVM-flag correctly in our shell script wrappers.
-
-if BITS64
-   JVM_DATAMODEL=-d64 # 64-bit machine
-else
-   JVM_DATAMODEL=-d32 # 32-bit machine
-endif
+# Additional flags for the JVM. Historically this was used because the
+# implementors of JVM failed to handle 32-bit and 64-bit native
+# binaries correctly. They claim to handle it correctly now.
+#
+# if BITS64
+#    JVM_FLAGS=-d64 # 64-bit machine
+# else
+#    JVM_FLAGS=-d32 # 32-bit machine
+# endif
+JVM_FLAGS=
 
 scriptmacros.m4:
-	@printf "define(M4_JVM_DATAMODEL, $(JVM_DATAMODEL))dnl\n" > scriptmacros.m4
+	@printf "define(M4_JVM_FLAGS, $(JVM_FLAGS))dnl\n" > scriptmacros.m4
 	@printf "define(M4_JVM_MEMORY_SIZE, $(JVM_MEMORY_SIZE))dnl\n" >> scriptmacros.m4
 	@printf "define(M4_VERSION, $(VERSION))dnl\n" >> scriptmacros.m4
 	@printf "define(M4_COMPLETE_VERSION, $(COMPLETE_VERSION))dnl\n" >> scriptmacros.m4
@@ -197,7 +197,7 @@ install-data-hook:
 	@echo ""
 	@echo "                   DOCUMENTATION"
 	@echo ""
-	@echo " Please consult the README file before using the software."
+	@echo " Please consult the README.md file before using the software."
 	@echo " There is also comprehensive documentation in the form of"
 	@echo " white papers at https://www.verificatum.org."
 	@echo ""
@@ -212,12 +212,12 @@ install-data-hook:
 	@echo " The mix-net comes with a well documented demonstrator which"
 	@echo " can be configured in many ways to illustrate the features of"
 	@echo " the mix-net. The demo is found in ./demo/mixnet. See the"
-	@echo " README file in this directory for more information."
+	@echo " README.md file in this directory for more information."
 	@echo ""
 	@echo "================================================================"
 	@echo ""
 
-dist_noinst_DATA = demo $(PKGPATH) .macros.m4 .version.m4 tools $(SRC)
+dist_noinst_DATA = demo $(PKGPATH) README.md .macros.m4 .version.m4 tools $(SRC)
 jar_DATA = $(JARFILE)
 dist_bin = $(FILES_SCRIPT) $(BINDIR)/vmn-$(VERSION)-info
 dist_bin_SCRIPTS = $(FILES_SCRIPT) $(BINDIR)/vmn-$(VERSION)-info

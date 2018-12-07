@@ -1,151 +1,89 @@
+# Verificatum Mix-Net (VMN)
 
+## Overview
 
-                  VERIFICATUM MIX-NET (VMN)
+VMN is the first implementation of a fully distributed and provably
+secure mix-net. However, the framework is quite general and several of
+the subprotocols are useful without any changes to implement other
+complex protocols.
 
+The software is modular and well documented to allow easy use and
+verification. For comprehensive information and documentation we refer
+the reader to https://www.verificatum.org.
 
-VMN is an implementation of a provably secure mix-net, but the
-framework is quite general and several of the subprotocols are useful
-without any changes to implement other complex protocols. The software
-is modular and well documented to allow easy use and verification. For
-comprehensive information and documentation we refer the reader to
-<https://www.verificatum.org>.
+Depending on how the underlying VCR library is compiled, native code
+may be used. You can check this using
 
-For improved efficiency, the most time critical parts can optionally
-be linked to routines in:
+        vcr-<VCR_VERSION>-info complete
 
-* The GNU MP library (GMP) and the GMP Modular Exponentiation
-  Extension (GMPMEE) library, using Verificatum Multiplicative
-  Group library for Java (VMGJ),
+where `<VCR_VERSION>` is the version of the VCR library. Type `vcr-`
+and then use tab to get the rest of the command to execute.
 
-* The Verificatum Elliptic Curve library (VEC), using the Verificatum
-  Elliptic Curve library for Java (VECJ), which is based on the GNU MP
-  library (GMP).
+## Quick Start
 
-The overhead for making native calls is very small in the context of
-modular exponentiations and scalar multiplications in elliptic
-curves. Thus, this makes VMN almost as fast as if it was implemented
-directly in C while keeping the simplicity of Java code for the
-protocol logic.
-
-The following assumes that you are using a release. Developers should
-also read README_DEV.
-
-
-                       QUICK START
-
-On most UN*X systems you can simply configure everything, build and
-install using the following snippet, but we strongly advice against
-this in real applications unless it has already been verified to be
+On most UN*X systems you can simply configure everything, build, and
+install using the following snippet, but **we strongly advice against
+this in real applications** unless it has already been verified to be
 adequate on your platform and in your application.
 
-        $ ./configure
-        $ make
-        $ sudo make install
-
-If the optimized native code is used, then ./configure would be
-replaced by
-
-        $ LD_LIBRARY_PATH=/usr/local/lib \
-VMGJ_JAR=/usr/local/share/java/verificatum-vmgj-<VMGJ_VERSION>.jar \
-VECJ_JAR=/usr/local/share/java/verificatum-vecj-<VECJ_VERSION>.jar \
-./configure --enable-vmgj --enable-vecj
-
-This assumes that you did a corresponding standard installation of
-GMPMEE, VMGJ, VEC, and VECJ.
-
-We stress that it does NOT suffice to put the jars in the
-CLASSPATH. The jars used are hardcoded into the executable scripts to
-reduce the risk of relying on outdated versions. The configure script
-matches the version given in the manifest file of each jar.
+        ./configure
+        make
+        sudo make install
 
 
-                         BUILDING
+## Building
 
-1) You need to install Open JDK 7 (or later) and M4.
+1. You need to install Open JDK 10 (or later) and M4.
 
-2) Please use
+2. Please use
 
-        $ ./configure
-        $ make
+        ./configure
+        make
 
    to build the software.
 
-3) If you want to use native code for modular exponentiations etc,
-   then you must install GMP, GMPMEE, VMGJ, VEC, and VECJ first. We
-   refer the user to the installation instructions of these
-   packages. Depending on your operating system, GMP may already be
-   installed. Make sure that it is a recent version, since some
-   distributions of operating systems use outdated versions.
+3. If you want to use native code for modular exponentiations etc,
+   then you must build VCR with native code enabled and install it in
+   that way. You may inspect the complete version of VCR you are using
+   with the following command, where `<VCR_VERSION>` is your version
+   of VCR.
 
-   Set the environment variables VMGJ_JAR and VECJ_JAR to the absolute
-   paths of the jar files of VMGJ and VECJ.
+        vcr-<VCR_VERSION>-info complete
 
-   Note that for security reasons the versions of these libraries must
-   match those in configure.ac *exactly* and that it does not suffice
-   to rename the jar files to pass the configuration tests.
+4. Optionally, you may run unit tests:
 
-   Then the configure command above must be replaced by
-
-        $ ./configure --enable-vmgj --enable-vecj
-
-   to enable use of the native code instead of the pure Java code. You
-   can of course use one of the libraries without the other, but in
-   both cases you need to install GMP.
-
-   On most platforms the following will work
-
-        $ LD_LIBRARY_PATH=/usr/local/lib \
-VMGJ_JAR=/usr/local/share/java/verificatum-vmgj-<VERSION>.jar \
-VECJ_JAR=/usr/local/share/java/verificatum-vecj-<VERSION>.jar \
-./configure --enable-vmgj --enable-vecj
-
-   The configure script tries to guess the locations of jni.h and
-   jni_md.h, but you may need to set up C_INCLUDE_PATH on your own if
-   this fails or if you want to use a specific JVM.
-
-4) Optionally, you may run a few unit tests, by
-
-        $ make check
+        make check
 
    This takes some time, since it verifies both basic functionality as
-   well as runs some of the subprotocols in a simulated environment
-   and some of these tests necessarily use almost realistic data
-   sizes.
+   well as run some of the subprotocols in a simulated environment and
+   some of these tests necessarily use almost realistic data sizes.
 
 
-			INSTALLING
+## Installing
 
-   ##########################################################
-   ##################### WARNING! ###########################
-   ##########################################################
-   #                                                        #
-   # WARNING! Please read the following instructions        #
-   # carefully. Failure to do so may result in a completely #
-   # insecure installation.                                 #
-   #                                                        #
-   ##########################################################
+   **WARNING! Please read the following instructions
+     carefully. Failure to do so may result in a completely insecure
+     installation.**
 
+1. Please use
 
-1) Please use
-
-        $ make install
+        make install
 
    to install the software. You may need to be root or use sudo.
 
-2) The tools in the library, e.g., vog, that require a source of
+2. The tools in the library, e.g., vog, that require a source of
    randomness to function, uses the random source defined by two files
    that by default are named:
 
        $HOME/.verificatum_random_source
-
        $HOME/.verificatum_random_seed
 
    The first stores a description of a random device or a PRG and the
    second stores a random seed if a PRG is used.
 
-   Here $HOME denotes the home directory of the current user. The
-   command vog is a script that invokes the java interpreter on the
-   class verificatum.ui.gen.GeneratorTool.
+   Here `$HOME` denotes the home directory of the user. The command
+   vog is a script that invokes the java interpreter on the class
+   `com.verificatum.ui.gen.GeneratorTool`.
 
    You may override the location of these files by setting the
    environment variables:
@@ -153,35 +91,34 @@ VECJ_JAR=/usr/local/share/java/verificatum-vecj-<VERSION>.jar \
        VERIFICATUM_RANDOM_SOURCE
        VERIFICATUM_RANDOM_SEED
 
-   ##########################################################
-   ##################### WARNING! ###########################
-   ##########################################################
-   #                                                        #
-   # If an adversary is able to write to any of these       #
-   # files, then the software provides no security at all.  #
-   #                                                        #
-   # If an adversary is able to read from the second file,  #
-   # then the software provides no security at all. The     #
-   # contents of the first file can safely be made public.  #
-   #                                                        #
-   # If you use the environment variables, then you must    #
-   # make sure that nobody can modify them.
-   #                                                        #
-   ##########################################################
+   **WARNING!**
 
+   **If an adversary is able to write to any of these files, then the
+     software provides no security at all.**
 
-3) The above two files must be initialized using vog before any
+   **If an adversary is able to read from the second file, then the
+     software provides no security at all. The contents of the first
+     file can safely be made public if it cannot be changed.**
+
+   **If you use the environment variables, then you must make sure
+     that nobody can modify them.**
+
+   **Please understand that this software is meant to be run in a
+     secure environment. You are responsible for providing this
+     environment.**
+
+3. The above two files must be initialized using vog before any
    commands that require randomness are used. You can do this as
    follows.
 
-       $ vog -rndinit RandomDevice <my device>
+       vog -rndinit RandomDevice <my device>
        Successfully initialized random source!
 
    If you wish to use a PRG instead, then you need to provide a seed
    as well, e.g., to use a provably secure PRG under the DDH
    assumption you could execute:
 
-       $ vog -rndinit -seed seedfile PRGElGamal -fixed 1024
+       vog -rndinit -seed seedfile PRGElGamal -fixed 1024
        Successfully initialized random source! Deleted seed file.
 
    The command replaces the seed file each time it is invoked to avoid
@@ -191,46 +128,49 @@ VECJ_JAR=/usr/local/share/java/verificatum-vecj-<VERSION>.jar \
    files that store the random source and initialize it again with
    your new choice.
 
-   ##########################################################
-   ##################### WARNING! ###########################
-   ##########################################################
-   #                                                        #
-   # The provided seed file must contain bits that are      #
-   # indistinguishable from truly random bits. The seed     #
-   # bits must not be reused here or anywhere else.         #
-   #                                                        #
-   # Failure to provide a proper seed file may result in a  #
-   # catastrophic security breach.                          #
-   #                                                        #
-   ##########################################################
+   **WARNING!**
 
+   **The provided seed file must contain bits that are
+     indistinguishable from truly random bits. The seed bits must not
+     be reused here or anywhere else.**
 
-			 USING
+   **Failure to provide a proper seed file may result in a
+     catastrophic privacy breach.**
+
+   **If you decide to use fixed seed that you re-use for testing
+     purposes, then please make sure to implement a mechanism that
+     prevents you from accidentally using this in a real
+     installation.**
+
+## Usage
 
 Comprehensive documentation ready for printing can be downloaded at
-<https://www.verificatum.org>, but you can also go directly to
-demo/mixnet and run the ./demo script if you are impatient. The README
-in this directory explains how to configure the demo.
+https://www.verificatum.org, but you can also go directly to the
+`demo/mixnet` directory and run the `./demo` script if you are
+impatient. `demo/mixnet/README.md` explains how to configure the demo.
+
+You can also configure benchmark suites and run them remotely on
+multiple machines.
 
 Technical information can, after installing, be found by using
 
-        $ vtm -h
+        vtm -h
 
-which gives an overview of the available commands. More information
-about each command can then be printed.
+which gives an overview of the available commands. More usage
+information about each command can then be printed similarly.
 
 
-                   API DOCUMENTATION
+## API Documentation
 
 You may use
- 
-        $ make api
+
+        make api
 
 to invoke Javadoc to build the API. The API is not installed
 anywhere. You can copy it to any location.
 
 
-                     REPORTING BUGS
+## Reporting Bugs
 
 Minor bugs should be reported in the repository system as issues or
 bugs. Security critical bugs, vulnerabilities, etc should be reported

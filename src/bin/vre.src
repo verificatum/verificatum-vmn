@@ -17,12 +17,6 @@
 # You should have received a copy of the GNU Affero General Public
 # License along with VMN. If not, see <http://www.gnu.org/licenses/>.
 
-dnl The M4_JVM_DATAMODEL is replaced by -d32 or -d64, by an m4 macro. The
-dnl value used depends on the native wordlength. This is *necessary*
-dnl in some OS, e.g., Solaris, since the JVM otherwise tries to
-dnl execute in 32-bit mode instead of 64-bit mode. It is not needed in
-dnl Linux or FreeBSD.
-dnl
 # Add the particular jar files we use.
 export CLASSPATH=M4_ALL_JAR
 
@@ -43,7 +37,7 @@ if [ x${VERIFICATUM_RANDOM_SEED} = x ]; then
 fi
 
 java \
-M4_JVM_DATAMODEL \
+M4_JVM_FLAGS \
 M4_JVM_MEMORY_SIZE \
 -Djava.security.egd=file:/dev/./urandom \
 com.verificatum.protocol.elgamal.ProtocolElGamalRearTool "$COMMAND_NAME" \
