@@ -31,7 +31,6 @@ VCR_VERSION=3.0.3
 
 # Checks for development tools we need.
 ACE_PROG_JAVAC
-ACE_PROG_JAVAH
 ACE_PROG_JAR
 ACE_PROG_JAVADOC
 ACE_PROG_JAVA
