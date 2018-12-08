@@ -1,8 +1,6 @@
 sudo: required
 dist: xenial
 language: java
-jdk:
-  - openjdk10
 
 before_install:
     - sudo apt-get update
