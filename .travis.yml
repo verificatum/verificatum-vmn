@@ -14,4 +14,4 @@ before_install:
     - git clone https://github.com/verificatum/verificatum-vcr.git; cd verificatum-vcr; make -f Makefile.build; ./configure --enable-vmgj --enable-vecj; make; sudo make install; cd -; sudo /sbin/ldconfig
 
 script:
-    - make -f Makefile.build && ./configure && make && make check
+    - make -f Makefile.build && PATH=$PATH:/usr/local/bin ./configure && make && make check
