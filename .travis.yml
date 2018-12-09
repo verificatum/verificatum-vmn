@@ -14,5 +14,5 @@ script:
     - git clone https://github.com/verificatum/verificatum-vec.git && cd verificatum-vec && make -f Makefile.build && ./configure && make && sudo make install && cd - && sudo /sbin/ldconfig
     - git clone https://github.com/verificatum/verificatum-vecj.git && cd verificatum-vecj && make -f Makefile.build && ./configure && make && sudo make install && cd - && sudo /sbin/ldconfig
 
-    - jdk_switcher use oraclejdk11 && git clone https://github.com/verificatum/verificatum-vcr.git && cd verificatum-vcr && make -f Makefile.build && ./configure --enable-vmgj --enable-vecj && make && sudo make install && cd - && sudo /sbin/ldconfig
-    - jdk_switcher use oraclejdk11 && make -f Makefile.build && ./configure && make && make check
+    - jdk_switcher use openjdk11 && git clone https://github.com/verificatum/verificatum-vcr.git && cd verificatum-vcr && make -f Makefile.build && ./configure --enable-vmgj --enable-vecj && make && sudo make install && cd - && sudo /sbin/ldconfig
+    - jdk_switcher use openjdk11 && make -f Makefile.build && ./configure && make && make check
