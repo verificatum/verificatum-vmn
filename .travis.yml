@@ -13,9 +13,5 @@ script:
     - git clone https://github.com/verificatum/verificatum-vmgj.git && cd verificatum-vmgj && make -f Makefile.build && ./configure && make && sudo make install && cd - && sudo /sbin/ldconfig
     - git clone https://github.com/verificatum/verificatum-vec.git && cd verificatum-vec && make -f Makefile.build && ./configure && make && sudo make install && cd - && sudo /sbin/ldconfig
     - git clone https://github.com/verificatum/verificatum-vecj.git && cd verificatum-vecj && make -f Makefile.build && ./configure && make && sudo make install && cd - && sudo /sbin/ldconfig
-    - export JAVA_HOME=$HOME/openjdk11
-    - $TRAVIS_BUILD_DIR/install-jdk.sh --install openjdk11 --target $JAVA_HOME
     - git clone https://github.com/verificatum/verificatum-vcr.git && cd verificatum-vcr && make -f Makefile.build && ./configure --enable-vmgj --enable-vecj && make && sudo make install && cd - && sudo /sbin/ldconfig
-    - export JAVA_HOME=$HOME/openjdk11
-    - $TRAVIS_BUILD_DIR/install-jdk.sh --install openjdk11 --target $JAVA_HOME
     - make -f Makefile.build && ./configure && make && make check
