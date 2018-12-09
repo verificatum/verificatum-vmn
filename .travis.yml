@@ -2,10 +2,10 @@ sudo: required
 dist: xenial
 language: java
 
-# - echo $TRAVIS_BUILD_DIR
-# - sudo cat /home/travis/build/verificatum/verificatum-vcr/bin/vcr-3.0.3-info
-#before_install:
+jdk:
+  - openjdk11
 
+before_install:
 script:
     - sudo apt-get update
     - sudo apt-get install --yes m4 libgmp-dev
