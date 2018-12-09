@@ -50,11 +50,6 @@ JDK_DOC="http://docs.oracle.com/javase/8/docs/api"
 # configured for this installation.
 export LD_LIBRARY_PATH := $(libdir):$(LD_LIBRARY_PATH)
 
-# Amount of memory used by the JVM. Our software execute in less than
-# 2GB, so this is conservative.
-#JVM_MEMORY_SIZE=-Xms1024m -Xmx6000m
-JVM_MEMORY_SIZE=-Xmx3000m
-
 COMPLETE_VERSION=vmn-$(VERSION)($(VCR_COMPLETE_VERSION))
 
 ######################## Extracting targets  ################################
@@ -129,11 +124,14 @@ $(BINDIR)/vmn-$(VERSION)-info: scriptmacros.m4 $(SRC_BINDIR)/vmn-info.src
 # else
 #    JVM_FLAGS=-d32 # 32-bit machine
 # endif
+#
+# Amount of memory used by the JVM. Our software execute in less than
+# 2GB, so this is conservative.
+# JVM_FLAGS=-Xms1024m -Xmx6000m
 JVM_FLAGS=
 
 scriptmacros.m4:
 	@printf "define(M4_JVM_FLAGS, $(JVM_FLAGS))dnl\n" > scriptmacros.m4
-	@printf "define(M4_JVM_MEMORY_SIZE, $(JVM_MEMORY_SIZE))dnl\n" >> scriptmacros.m4
 	@printf "define(M4_VERSION, $(VERSION))dnl\n" >> scriptmacros.m4
 	@printf "define(M4_COMPLETE_VERSION, $(COMPLETE_VERSION))dnl\n" >> scriptmacros.m4
 	@printf "define(M4_BINDIR, $(bindir))dnl\n" >> scriptmacros.m4

@@ -38,7 +38,6 @@ fi
 
 java \
 M4_JVM_FLAGS \
-M4_JVM_MEMORY_SIZE \
 -Djava.security.egd=file:/dev/./urandom \
 com.verificatum.protocol.elgamal.ProtocolElGamalRearTool "$COMMAND_NAME" \
 "$VERIFICATUM_RANDOM_SOURCE" "$VERIFICATUM_RANDOM_SEED" "$@"

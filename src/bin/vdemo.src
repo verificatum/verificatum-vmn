@@ -38,7 +38,6 @@ fi
 
 java \
 M4_JVM_FLAGS \
-M4_JVM_MEMORY_SIZE \
 -Djava.security.egd=file:/dev/./urandom \
 -Djavax.accessibility.assistive_technologies=java.lang.String \
 com.verificatum.protocol.demo.Demo "$COMMAND_NAME" "$@"
