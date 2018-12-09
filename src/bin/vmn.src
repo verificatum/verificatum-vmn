@@ -32,7 +32,6 @@ COMMAND_NAME=${COMMAND_NAME##*/}
 
 java \
 M4_JVM_FLAGS \
-M4_JVM_MEMORY_SIZE \
 -Djava.security.egd=file:/dev/./urandom \
 com.verificatum.protocol.mixnet.MixNetElGamalTool ${SCRIPT_PID} "$COMMAND_NAME" "$@"
 
