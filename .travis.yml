@@ -26,4 +26,4 @@ before_script:
     - "sh -e /etc/init.d/xvfb start"
 
 script:
-    - make -f Makefile.build && ./configure && make && sudo make install && make check
+    - make -f Makefile.build && ./configure && make && sudo make install && vog -rndinit RandomDevice /dev/urandom && make check
