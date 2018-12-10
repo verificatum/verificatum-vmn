@@ -24,6 +24,7 @@ before_install:
 before_script:
     - "export DISPLAY=:99.0"
     - "sh -e /etc/init.d/xvfb start"
+    - _JAVA_OPTIONS=
 
 script:
     - make -f Makefile.build && ./configure && make && sudo make install && vog -rndinit RandomDevice /dev/urandom && make check
