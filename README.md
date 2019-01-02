@@ -2,8 +2,12 @@
 
 ## Overview
 
-VMN is the first implementation of a fully distributed and provably
-secure mix-net. However, the framework is quite general and several of
+VMN was completed 2008 and is the first implementation of a fully
+distributed and provably secure mix-net. It is also the first
+implementation of a universally verifiable mix-net and the first with
+a serious benchmark.
+
+However, the framework is quite general and several of
 the subprotocols are useful without any changes to implement other
 complex protocols.
 
@@ -11,27 +15,26 @@ The software is modular and well documented to allow easy use and
 verification. For comprehensive information and documentation we refer
 the reader to https://www.verificatum.org.
 
-Depending on how the underlying VCR library is compiled, native code
-may be used. You can check this using
+
+## Quick Start
+
+An installation package is available at https://www.verificatum.org
+that contains, and compiles and installs all needed software to run a
+demonstrator in a single command. This is the recommended solution to
+get started.
+
+
+## Building
+
+Depending on how the underlying [Verificatum Core
+Routines](https://github.com/verificatum/verificatum-vmn) library is
+compiled, native code may be used. You can check this using
 
         vcr-<VCR_VERSION>-info complete
 
 where `<VCR_VERSION>` is the version of the VCR library. Type `vcr-`
-and then use tab to get the rest of the command to execute.
-
-## Quick Start
-
-On most UN*X systems you can simply configure everything, build, and
-install using the following snippet, but **we strongly advice against
-this in real applications** unless it has already been verified to be
-adequate on your platform and in your application.
-
-        ./configure
-        make
-        sudo make install
-
-
-## Building
+and then use tab to get the rest of the command to execute. In any
+case this library is a requirement to install VMN.
 
 1. You need to install Open JDK 10 (or later) and M4.
 
