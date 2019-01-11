@@ -246,7 +246,7 @@ first() {
     local first_RES
 
     first_LIST="${2}"
-    first_RES=`echo "${first_LIST}" | sed "s/^\s*\(\S\S*\).*/\1/"`
+    first_RES=`echo "${first_LIST}" | sed "s/^[[:space:]]*\([^[:space:]][^[:space:]]*\).*/\1/"`
 
     eval "${1}=\${first_RES}"
 }
@@ -257,7 +257,7 @@ second() {
     local second_RES
 
     second_LIST="${2}"
-    second_RES=`echo "${second_LIST}" | sed "s/^\s*\(\S\S*\)\s*\(\S\S*\).*/\2/"`
+    second_RES=`echo "${second_LIST}" | sed "s/^[[:space:]]*\([^[:space:]][^[:space:]]*\)[[:space:]]*\([^[:space:]][^[:space:]]*\).*/\2/"`
 
     eval "${1}=\${second_RES}"
 }
@@ -268,7 +268,7 @@ last() {
     local last_RES
 
     last_LIST="${2}"
-    last_RES=`echo "${last_LIST}" | sed "s/.*\s\s*\(\S\S*\)\s*\$/\1/"`
+    last_RES=`echo "${last_LIST}" | sed "s/.*[[:space:]][[:space:]]*\([^[:space:]][^[:space:]]*\)[[:space:]]*\$/\1/"`
 
     eval "${1}=\${last_RES}"
 }
@@ -282,7 +282,7 @@ pop() {
     pop_LIST="${3}"
 
     first pop_HEAD "${pop_LIST}"
-    pop_TAIL="`echo \"${pop_LIST}\" | sed \"s/^\\s*\\S\\S*\\s*//\"`"
+    pop_TAIL="`echo \"${pop_LIST}\" | sed \"s/^[[:space:]]*[^[:space:]][^[:space:]]*[[:space:]]*//\"`"
 
     eval "${1}=\${pop_HEAD}"
     eval "${2}=\${pop_TAIL}"
@@ -306,7 +306,7 @@ scale_list() {
 	arithm scale_list_SCALED_ELEMENT "${scale_list_FACTOR} * ${scale_list_ELEMENT}"
 	scale_list_SCALED_LIST="${scale_list_SCALED_LIST} ${scale_list_SCALED_ELEMENT}"
     done
-    scale_list_SCALED_LIST=`echo "${scale_list_SCALED_LIST}" | sed "s/\s*//"`
+    scale_list_SCALED_LIST=`echo "${scale_list_SCALED_LIST}" | sed "s/[[:space:]]*//"`
 
     eval "${1}=\${scale_list_SCALED_LIST}"
 }
@@ -399,7 +399,7 @@ affine_list() {
 	affine affine_list_Y ${affine_list_A} ${affine_list_B} ${affine_list_X}
 	affine_list_RES="${affine_list_RES} ${affine_list_Y}"
     done
-    affine_list_RES=`echo "${affine_list_RES}" | sed "s/\s*//"`
+    affine_list_RES=`echo "${affine_list_RES}" | sed "s/[[:space:]]*//"`
 
     eval "${1}=\${affine_list_RES}"
 }
@@ -632,7 +632,7 @@ effective_ms() {
     effective_ms_LOGFILE="${2}"
     effective_ms_INDEX="${3}"
 
-    effective_ms_RES=`cat ${effective_ms_LOGFILE} | grep -E "\- Effective.*" | sed "s/- Effective\s*//" | sed "s/[[:digit:]]*h\s*[[:digit:]]*m\s*[[:digit:]]*s//" | sed "s/\s*//" | sed "${effective_ms_INDEX}!d"`
+    effective_ms_RES=`cat ${effective_ms_LOGFILE} | grep -E "\- Effective.*" | sed "s/- Effective[[:space:]]*//" | sed "s/[[:digit:]]*h[[:space:]]*[[:digit:]]*m[[:space:]]*[[:digit:]]*s//" | sed "s/[[:space:]]*//" | sed "${effective_ms_INDEX}!d"`
 
     eval "${1}=\${effective_ms_RES}"
 }
@@ -664,7 +664,7 @@ total_bytes() {
     total_bytes_LOGFILE="${2}"
     total_bytes_INDEX="${3}"
 
-    total_bytes_RES=`cat ${total_bytes_LOGFILE} | grep -E "\- Total.*" | sed "s/- Total.\s*//" | sed "s/[[:digit:]]*\.[[:digit:]]*\s*\S\S*\s*//" | sed "${total_bytes_INDEX}!d"`
+    total_bytes_RES=`cat ${total_bytes_LOGFILE} | grep -E "\- Total.*" | sed "s/- Total.[[:space:]]*//" | sed "s/[[:digit:]]*\.[[:digit:]]*[[:space:]]*[^[:space:]][^[:space:]]*[[:space:]]*//" | sed "${total_bytes_INDEX}!d"`
 
     eval "${1}=\${total_bytes_RES}"
 }
@@ -695,7 +695,7 @@ completed_ms() {
     completed_ms_LOGFILE="${2}"
     completed_ms_INDEX="${3}"
 
-    completed_ms_MS=`cat ${completed_ms_LOGFILE} | grep -E "Completed verification.*" | sed "s/Completed verification after\s*//" | sed "s/[[:digit:]]*h\s*[[:digit:]]*m\s*[[:digit:]]*s//" | sed "s/\s*//" | sed "s/(\([[:digit:]]*\)\s*ms)./\1/" | sed "${completed_ms_INDEX}!d"`
+    completed_ms_MS=`cat ${completed_ms_LOGFILE} | grep -E "Completed verification.*" | sed "s/Completed verification after[[:space:]]*//" | sed "s/[[:digit:]]*h[[:space:]]*[[:digit:]]*m[[:space:]]*[[:digit:]]*s//" | sed "s/[[:space:]]*//" | sed "s/(\([[:digit:]]*\)[[:space:]]*ms)./\1/" | sed "${completed_ms_INDEX}!d"`
 
     eval "${1}=\${completed_ms_MS}"
 }
@@ -726,7 +726,7 @@ size_bytes() {
     size_bytes_LOGFILE="${2}"
     size_bytes_INDEX="${3}"
 
-    size_bytes_RES=`cat ${size_bytes_LOGFILE} | grep -E "Proof size is.*" | sed "s/.*\(K\|M\|G\)B\s*(\([[:digit:]]*\).*/\2/" | sed "${size_bytes_INDEX}!d"`
+    size_bytes_RES=`cat ${size_bytes_LOGFILE} | grep -E "Proof size is.*" | sed "s/.*\(K\|M\|G\)B[[:space:]]*(\([[:digit:]]*\).*/\2/" | sed "${size_bytes_INDEX}!d"`
 
     eval "${1}=\${size_bytes_RES}"
 }
@@ -755,7 +755,7 @@ size_bytes_h() {
 benchmarksize() {
 
     printf "BENCH_BENCHMARKSIZE" > tmp_benchmarksize
-    BENCHMARKSIZE=`cat benchmarks/bench_config tmp_benchmarksize | m4 | tr "\n" " " | sed "s/\s*\(\S\S*\)\s*/\1/"`
+    BENCHMARKSIZE=`cat benchmarks/bench_config tmp_benchmarksize | m4 | tr "\n" " " | sed "s/[[:space:]]*\([^[:space:]][^[:space:]]*\)[[:space:]]*/\1/"`
     rm -f tmp_benchmarksize
 
     eval "${1}=\${BENCHMARKSIZE}"
@@ -771,7 +771,7 @@ store_results() {
 
     local RESULT_DIR="benchresults/${1}"
 
-    if !( test -f ${RESULT_DIR} );
+    if ! ( test -f ${RESULT_DIR} );
     then
 	mkdir -p ${RESULT_DIR}
 

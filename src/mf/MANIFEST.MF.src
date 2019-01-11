@@ -1,7 +1,7 @@
 Name: com/verificatum/protocol
 Specification-Title: VMN
 Specification-Version: VMN_VERSION_STRING
-Specification-Vendor: Verificatum AB
+Specification-Vendor: Verificatum Project
 Implementation-Title: com.verificatum
 Implementation-Version: VMN_VERSION_STRING
-Implementation-Vendor: Verificatum AB
+Implementation-Vendor: Verificatum Project

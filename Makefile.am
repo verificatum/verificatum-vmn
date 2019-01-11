@@ -118,18 +118,8 @@ $(BINDIR)/vmn-$(VERSION)-info: scriptmacros.m4 $(SRC_BINDIR)/vmn-info.src
 	cat scriptmacros.m4 $(SRC_BINDIR)/vmn-info.src | m4 > $(BINDIR)/vmn-$(VERSION)-info
 	chmod +x $(BINDIR)/vmn-$(VERSION)-info
 
-# Additional flags for the JVM. Historically this was used because the
-# implementors of JVM failed to handle 32-bit and 64-bit native
-# binaries correctly. They claim to handle it correctly now.
-#
-# if BITS64
-#    JVM_FLAGS=-d64 # 64-bit machine
-# else
-#    JVM_FLAGS=-d32 # 32-bit machine
-# endif
-#
-# Amount of memory used by the JVM. Our software execute in less than
-# 2GB, so this is conservative.
+# Additional flags for the JVM.  Amount of memory used by the JVM. Our
+# software execute in less than 2GB, so this is conservative.
 # JVM_FLAGS=-Xms1024m -Xmx6000m
 JVM_FLAGS=
 

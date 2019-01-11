@@ -157,7 +157,7 @@ cpevalat() {
 
 maxciphcom() {
 
-    if !( test x${2} = x );
+    if ! ( test x${2} = x );
     then
 	eval "$1=\"-maxciph ${2}\""
     fi
@@ -165,7 +165,7 @@ maxciphcom() {
 
 widthcom() {
 
-    if !( test x${2} = x );
+    if ! ( test x${2} = x );
     then
 	eval "$1=\"-width ${2}\""
     fi
@@ -173,7 +173,7 @@ widthcom() {
 
 keywidthcom() {
 
-    if !( test x${2} = x );
+    if ! ( test x${2} = x );
     then
 	eval "$1=\"-keywidth ${2}\""
     fi
@@ -376,7 +376,7 @@ demointro() {
 	os_string OS_STRING "$CPU_OS_VERSION"
 	version_string VERSION "$CPU_OS_VERSION"
 
-	if !( test $VERSION = $VERSION_DIRECTOR );
+	if ! ( test $VERSION = $VERSION_DIRECTOR );
 	then
 	    printf "\nDEMO FAILED: Mismatching version! ($VERSION != $VERSION_DIRECTOR)\n\n"
 	    exit
@@ -392,20 +392,20 @@ demointro() {
 
     printf "No. keys used in parallel:          $KEYWIDTH\n"
 
-    if !( test x$FORCED_WIDTH = x );
+    if ! ( test x$FORCED_WIDTH = x );
     then
 	printf "No. ciphertexts mixed as a unit:    $FORCED_WIDTH\n"
-    elif !( test x$WIDTH = x );
+    elif ! ( test x$WIDTH = x );
     then
 	printf "No. ciphertexts mixed as a unit:    $WIDTH\n"
     else
 	printf "No. ciphertexts mixed as a unit:    1\n"
     fi
 
-    if !( test x$FORCED_MAX_NO_CIPHERTEXTS = x );
+    if ! ( test x$FORCED_MAX_NO_CIPHERTEXTS = x );
     then
 	printf "No. ciphertexts in precomp.:        $FORCED_MAX_NO_CIPHERTEXTS\n"
-    elif !( test x$MAX_NO_CIPHERTEXTS = x );
+    elif ! ( test x$MAX_NO_CIPHERTEXTS = x );
     then
 	printf "No. ciphertexts in precomp.:        $MAX_NO_CIPHERTEXTS\n"
     fi

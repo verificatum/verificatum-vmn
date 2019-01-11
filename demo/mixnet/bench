@@ -46,7 +46,7 @@ DOCLEAN=f
 
 for BENCHMARK in ${BENCHMARKS};
 do
-    if !( test -d benchresults/${BENCHMARK} );
+    if ! ( test -d benchresults/${BENCHMARK} );
     then
 
     	./clean

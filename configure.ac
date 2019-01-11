@@ -27,7 +27,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # We require a specific version of VCR. The version is verified both in
 # terms of the name of the jar file and the contents of the jar
 # manifest file.
-VCR_VERSION=3.0.3
+VCR_VERSION=3.0.4
 
 # Checks for development tools we need.
 ACE_PROG_JAVAC
@@ -38,9 +38,6 @@ ACE_PROG_JAVA
 cd tools/installation
 javac TestLoadJar.java
 cd -
-
-# We need to figure out if we need to pass -J-d64 to javac.
-AM_CONDITIONAL([BITS64], [test x`getconf LONG_BIT` = x64])
 
 AC_CONFIG_FILES([Makefile])
 

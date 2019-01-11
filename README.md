@@ -177,5 +177,6 @@ anywhere. You can copy it to any location.
 
 Minor bugs should be reported in the repository system as issues or
 bugs. Security critical bugs, vulnerabilities, etc should be reported
-directly to Verificatum AB. We will make best effort to disclose the
-information in a responsible way before the finder gets proper credit.
+directly to the Verificatum Project. We will make best effort to
+disclose the information in a responsible way before the finder gets
+proper credit.

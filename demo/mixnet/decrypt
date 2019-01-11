@@ -37,7 +37,7 @@ do
     getssh SSH $i
     getprefix PREFIX $i
     getname NAME $i
-    $TERM -sl 1500 -T "$NAME (decrypt)" -e "$SSH '''$CHECK_ENV && cd ${PREFIX}/${NAME} && vmn -decrypt -e $SILENT $WIDTHCOM ciphertexts plaintexts_orig && !( test -f plaintexts_orig ) || vmnc -plain -outi $INTER $WIDTHCOM plaintexts_orig plaintexts; printf \$? > exitcode; sleep $SLEEPTIME'''"&
+    $TERM -sl 1500 -T "$NAME (decrypt)" -e "$SSH '''$CHECK_ENV && cd ${PREFIX}/${NAME} && vmn -decrypt -e $SILENT $WIDTHCOM ciphertexts plaintexts_orig && ! ( test -f plaintexts_orig ) || vmnc -plain -outi $INTER $WIDTHCOM plaintexts_orig plaintexts; printf \$? > exitcode; sleep $SLEEPTIME'''"&
 
 done
 

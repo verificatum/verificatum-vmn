@@ -58,10 +58,8 @@ cd ..
 
     cpevalat $TMP_COMMAND 1
 
-    # This convoluted way of invoking copyfrom is needed due to a bug
-    # in /bin/sh.
     rm -rf export
-    bash -c "source conf; copyfrom 1 export ."
+    copyfrom 1 export .
 
     phaseend
 
