@@ -1,19 +1,26 @@
-dnl Copyright 2008-2018 Douglas Wikstrom
+dnl Copyright 2008-2019 Douglas Wikstrom
 dnl
 dnl This file is part of Verificatum Mix-Net (VMN).
 dnl
-dnl VMN is free software: you can redistribute it and/or modify it under
-dnl the terms of the GNU Affero General Public License as published by
-dnl the Free Software Foundation, either version 3 of the License, or
-dnl (at your option) any later version.
+dnl Permission is hereby granted, free of charge, to any person
+dnl obtaining a copy of this software and associated documentation
+dnl files (the "Software"), to deal in the Software without
+dnl restriction, including without limitation the rights to use, copy,
+dnl modify, merge, publish, distribute, sublicense, and/or sell copies
+dnl of the Software, and to permit persons to whom the Software is
+dnl furnished to do so, subject to the following conditions:
 dnl
-dnl VMN is distributed in the hope that it will be useful, but WITHOUT
-dnl ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-dnl or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
-dnl Public License for more details.
+dnl The above copyright notice and this permission notice shall be
+dnl included in all copies or substantial portions of the Software.
 dnl
-dnl You should have received a copy of the GNU Affero General Public
-dnl License along with VMN. If not, see <http://www.gnu.org/licenses/>.
+dnl THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+dnl EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+dnl MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+dnl NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+dnl BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+dnl ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+dnl CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+dnl SOFTWARE.
 dnl
 ifdef(`USE_VMGJ',`define(`VMGJ_CODE')',`define(`VMGJ_PURE_JAVA_CODE')')dnl
 ifdef(`USE_VECJ',`define(`VECJ_CODE')',`define(`VECJ_PURE_JAVA_CODE')')dnl
