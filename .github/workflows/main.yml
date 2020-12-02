@@ -1,0 +1,87 @@
+name: Build verificatum and run all checks
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    # Run each month
+    - cron: '0 0 1 * *'
+
+jobs:
+  main:
+    strategy:
+      matrix:
+        jdk: [ openjdk-8-jdk, openjdk-11-jdk ]
+        os: [ ubuntu-18.04, ubuntu-20.04 ]
+        include:
+            # To be future-proof, also run with latest version of ubuntu and the default JDK
+            - os: ubuntu-latest
+              jdk: default-jdk
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Instal dependencies
+        run: |
+            sudo apt-get update -qq
+            sudo apt-get install -y m4 cpp gcc make libtool automake autoconf libgmp-dev ${{ matrix.jdk }} xterm xvfb
+
+      - name: Build & Install gmpmee
+        run: |
+            git clone https://github.com/verificatum/verificatum-gmpmee.git
+            cd verificatum-gmpmee
+            make -f Makefile.build
+            ./configure
+            make
+            sudo make install
+
+      - name: Build & Install vmgj
+        run: |
+            git clone https://github.com/verificatum/verificatum-vmgj.git
+            cd verificatum-vmgj
+            make -f Makefile.build
+            ./configure
+            make
+            sudo make install
+
+      - name: Build & Install vec
+        run: |
+            git clone https://github.com/verificatum/verificatum-vec.git
+            cd verificatum-vec
+            make -f Makefile.build
+            ./configure
+            make
+            sudo make install
+
+      - name: Build & Install vecj
+        run: |
+            git clone https://github.com/verificatum/verificatum-vecj.git
+            cd verificatum-vecj
+            make -f Makefile.build
+            ./configure
+            make
+            sudo make install
+
+      - name: Build & Install vcr
+        run: |
+            git clone https://github.com/verificatum/verificatum-vcr.git
+            cd verificatum-vcr
+            make -f Makefile.build
+            ./configure --enable-vmgj --enable-vecj
+            make
+            sudo make install
+
+      - name: Build & Install vmn
+        run: |
+            make -f Makefile.build
+            ./configure
+            make
+            sudo make install
+            vog -rndinit RandomDevice /dev/urandom
+
+      - name: Run checks
+        run: |
+            xvfb-run make check
