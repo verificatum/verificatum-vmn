@@ -293,7 +293,7 @@ public class Demo {
         // Keep the demo window open if requested.
         if (!opt.getBooleanValue("-hide") && opt.valueIsGiven("-keep")) {
             final int seconds = opt.getIntValue("-keep");
-            Thread.sleep(1000 * seconds);
+            Thread.sleep(1000l * seconds);
         }
 
         // Destroy the windows.
