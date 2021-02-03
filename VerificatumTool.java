@@ -78,15 +78,15 @@ public final class VerificatumTool {
     private static void formatParagraph(final StringBuilder sb,
                                         final String command,
                                         final String description) {
-        final Formatter f = new Formatter(sb, Locale.US);
-
-        final String broken = Util.breakLines(description, Opt.LINE_WIDTH - 8);
-        final String[] lines = Util.split(broken, "\n");
-        f.format(" %-4s - %s", command, lines[0]);
-        for (int i = 1; i < lines.length; i++) {
-            f.format("%n%5s   %s", "", lines[i]);
+        try (final Formatter f = new Formatter(sb, Locale.US)) {
+            final String broken = Util.breakLines(description, Opt.LINE_WIDTH - 8);
+            final String[] lines = Util.split(broken, "\n");
+            f.format(" %-4s - %s", command, lines[0]);
+            for (int i = 1; i < lines.length; i++) {
+                f.format("%n%5s   %s", "", lines[i]);
+            }
+            sb.append('\n');
         }
-        sb.append('\n');
     }
 
     /**
