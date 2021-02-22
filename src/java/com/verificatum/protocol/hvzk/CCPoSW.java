@@ -152,6 +152,7 @@ public final class CCPoSW extends ProtocolElGamal implements CCPoS {
             try {
                 commitmentExportThread.join();
             } catch (final InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
         }
     }
@@ -256,6 +257,7 @@ public final class CCPoSW extends ProtocolElGamal implements CCPoS {
             try {
                 commitmentExportThread.join();
             } catch (final InterruptedException ie) {
+                Thread.currentThread().interrupt();
             }
         }
 

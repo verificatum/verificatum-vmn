@@ -938,6 +938,7 @@ public final class ShufflerElGamalSession extends ProtocolElGamal {
             try {
                 nextOutputThread.join();
             } catch (final InterruptedException ie) {
+                Thread.currentThread().interrupt();
                 throw new ProtocolError("Unable to join threads!", ie);
             }
             nextOutputThread = null;
