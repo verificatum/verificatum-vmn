@@ -531,7 +531,6 @@ public final class DistrElGamalSession extends ProtocolElGamal {
         for (int l = 1; l <= k; l++) {
             decryptionFactors[l].free();
         }
-        decryptionFactors = null;
 
         tempLog.info("Compute plaintexts.");
         final PGroupElementArray plaintexts =

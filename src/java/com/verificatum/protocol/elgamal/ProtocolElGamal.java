@@ -815,13 +815,11 @@ public class ProtocolElGamal extends ProtocolBBT {
         plainKeys.generate(tempLog);
         pkeys = plainKeys.getPKeys();
         skey = plainKeys.getSKey();
-        plainKeys = null;
 
         // Generate an "independent" generator.
         IndependentGenerator ig =
             new IndependentGenerator("", this, pGroup, pkeys, skey, rbitlen);
         final PGroupElement h = ig.generate(tempLog);
-        ig = null;
 
         // Construct a source of jointly generated random coins.
         coins = new CoinFlipPRingSource("", this, h, pkeys, skey, rbitlen);
