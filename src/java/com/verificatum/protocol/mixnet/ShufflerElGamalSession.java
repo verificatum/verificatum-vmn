@@ -941,7 +941,6 @@ public final class ShufflerElGamalSession extends ProtocolElGamal {
                 Thread.currentThread().interrupt();
                 throw new ProtocolError("Unable to join threads!", ie);
             }
-            nextOutputThread = null;
         }
 
         // If the proof was rejected, then we need to drop our

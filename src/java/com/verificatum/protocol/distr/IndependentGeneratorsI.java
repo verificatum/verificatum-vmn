@@ -238,7 +238,6 @@ public final class IndependentGeneratorsI extends ProtocolElGamal
 
         // Collect generators parts.
         tempLog.info("Collect generators parts.");
-        Log tempLog2 = tempLog.newChildLog();
 
         // Publish our parts and read the other's.
         publishAndReadParts(pGroup, generatorsParts, size, threshold, log);
@@ -262,7 +261,7 @@ public final class IndependentGeneratorsI extends ProtocolElGamal
 
         // Generate seed for batching.
         tempLog.info("Generate seed for batching.");
-        tempLog2 = tempLog.newChildLog();
+        Log tempLog2 = tempLog.newChildLog();
 
         final byte[] prgSeed =
             coins.getCoinBytes(tempLog2, 8 * prg.minNoSeedBytes(), rbitlen);
@@ -270,7 +269,6 @@ public final class IndependentGeneratorsI extends ProtocolElGamal
 
         // Collect commitments.
         tempLog.info("Collect commitments.");
-        tempLog2 = tempLog.newChildLog();
 
         // Publish our parts and read the other's.
         publishAndSetCommitments(basic, threshold, log);

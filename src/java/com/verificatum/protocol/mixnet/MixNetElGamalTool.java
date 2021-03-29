@@ -1025,8 +1025,6 @@ public final class MixNetElGamalTool {
             System.err.println("Missing parent PID!");
             System.exit(1);
         }
-
-        final String parentPidString = args[0];
         final String[] newargs = Arrays.copyOfRange(args, 1, args.length);
 
         // Simple textual user interface.
@@ -1085,11 +1083,6 @@ public final class MixNetElGamalTool {
                 processSetpk(mixnet, opt);
                 return;
             }
-
-            // Create PID file. Everything from now on are protocol
-            // executions in contrast to the operations above that are
-            // local operations.
-            final File pidFile = new File(mixnet.getDirectory(), "pidfile");
             // try {
             //     new PID(parentPidString, pidFile);
             // } catch (UtilException ue) {
