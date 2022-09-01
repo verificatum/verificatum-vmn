@@ -23,11 +23,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-AC_PREREQ([2.63])
-AC_INIT([verificatum-vmn],
-        [m4_esyscmd([m4 .version.m4])],
-        [info@verificatum.com])
-AC_CANONICAL_SYSTEM # Must appear before AM_INIT_AUTOMAKE
+AC_PREREQ([2.71])
+AC_INIT([verificatum-vmn],[m4_esyscmd([m4 .version.m4])],[info@verificatum.com])
+AC_CANONICAL_TARGET # Must appear before AM_INIT_AUTOMAKE
 AM_INIT_AUTOMAKE([foreign tar-ustar -Wall -Werror -Wno-portability])
 AC_CONFIG_MACRO_DIR([m4])
 
