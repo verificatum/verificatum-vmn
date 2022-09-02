@@ -105,19 +105,19 @@ $(CLASSESROOT)/MANIFEST.MF: $(MFSRC)/MANIFEST.MF.src
 	cat .macros.m4 $(MFSRC)/MANIFEST.MF.src | m4 > $(CLASSESROOT)/MANIFEST.MF
 
 # Create the destination directory.
-.classesroot.stamp:
+classesroot.stamp:
 	mkdir -p $(CLASSESROOT)
-	@touch .classesroot.stamp
+	@touch classesroot.stamp
 
 # Compile all Java files.
-.classes.stamp: .classesroot.stamp $(FILES_JAVANAMES)
+classes.stamp: classesroot.stamp $(FILES_JAVANAMES)
 	$(JAVAC) -version
 	$(JAVAC) -Xlint:unchecked -classpath $(CLASSPATH) -d $(CLASSESROOT) $(AM_JAVACFLAGS) $(JAVACFLAGS) $(FILES_JAVANAMES)
-	@touch .classes.stamp
+	@touch classes.stamp
 
 # Build JAR file.
 jar : $(JARFILE)
-$(JARFILE): .classes.stamp $(FILES_TXT) $(CLASSESROOT)/MANIFEST.MF
+$(JARFILE): classes.stamp $(FILES_TXT) $(CLASSESROOT)/MANIFEST.MF
 	cd $(CLASSESROOT); $(JAR) cfm $@ MANIFEST.MF com; cp $@ ..
 
 $(BINDIR)/vmn-$(VERSION)-info: scriptmacros.m4 $(SRC_BINDIR)/vmn-info.src
@@ -242,21 +242,21 @@ dist_bin_SCRIPTS = $(FILES_SCRIPT) $(BINDIR)/vmn-$(VERSION)-info
 check: runtests rundemos runmixnet
 
 # Verifying non-interactive classes.
-runtests: .classes.stamp
+runtests: classes.stamp
 	@rm -rf $(TMP_TEST_DIR)
 	@mkdir -p $(TMP_TEST_DIR)
 	@LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) CLASSPATH=$(CLASSPATH) vtest -exec $(TEST_CLASSNAMES)
 	@rm -rf $(TMP_TEST_DIR)
 
 # Verifying protocols.
-rundemos: $(BINDIR)/vdemo .classes.stamp
+rundemos: $(BINDIR)/vdemo classes.stamp
 	@rm -rf $(TMP_DEMO_DIR)
 	@mkdir -p $(TMP_DEMO_DIR)
 	@LD_LIBRARY_PATH=$(LD_LIBRARY_PATH) CLASSPATH=$(CLASSPATH) $(BINDIR)/vdemo -hide -demoroot $(TMP_DEMO_DIR) $(DEMO_CLASSNAMES)
 	@rm -rf $(TMP_DEMO_DIR)
 
 # Verifying mix-net.
-runmixnet: $(FILES_SCRIPT) .classes.stamp
+runmixnet: $(FILES_SCRIPT) classes.stamp
 	@cd demo/mixnet; ./check
 
 ############################# Cleaning ######################################
@@ -278,4 +278,4 @@ cleananalysis: cleancheckstyle cleanfindbugs cleanpmd
 
 clean-local: cleanapi cleananalysis
 	find . -name "*~" -delete
-	@rm -rf verificatum-vmn*.tar $(INSTA)/*.class $(FILES_SCRIPT) scriptmacros.m4 $(JARFILE) $(TMP_TEST_DIR) $(TMP_DEMO_DIR) $(APIROOT) $(CLASSESROOT) *.stamp .*.stamp compile $(BINDIR)/vmn-$(VERSION)-info
+	@rm -rf verificatum-vmn*.tar $(INSTA)/*.class $(FILES_SCRIPT) scriptmacros.m4 $(JARFILE) $(TMP_TEST_DIR) $(TMP_DEMO_DIR) $(APIROOT) $(CLASSESROOT) *.stamp compile $(BINDIR)/vmn-$(VERSION)-info
