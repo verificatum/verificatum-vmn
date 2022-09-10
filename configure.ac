@@ -32,7 +32,7 @@ AC_CONFIG_MACRO_DIR([m4])
 # We require a specific version of VCR. The version is verified both in
 # terms of the name of the jar file and the contents of the jar
 # manifest file.
-VCR_VERSION=3.0.4
+VCR_VERSION=3.1.0
 
 # Checks for development tools we need.
 ACE_PROG_JAVAC
