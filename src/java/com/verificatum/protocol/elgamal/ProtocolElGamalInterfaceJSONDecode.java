@@ -105,9 +105,11 @@ public class ProtocolElGamalInterfaceJSONDecode
         final LargeInteger y =
             ((ModPGroupElement) ((PPGroupElement) fullPublicKey)
              .project(1)).toLargeInteger();
+        final int encoding = ((ModPGroup)pGroupg).getEncoding();
 
         final String form =
-            "{\"g\":\"%s\",\"p\":\"%s\",\"q\":\"%s\",\"y\":\"%s\"}";
+            "{\"g\":\"%s\",\"p\":\"%s\",\"q\":\"%s\",\"y\":\"%s\","
+            + "\"encoding\":\"%d\"}";
 
         try {
             final String ciphertextString =
@@ -115,7 +117,8 @@ public class ProtocolElGamalInterfaceJSONDecode
                               g.toString(10),
                               p.toString(10),
                               q.toString(10),
-                              y.toString(10));
+                              y.toString(10),
+                              encoding);
             ExtIO.writeString(file, ciphertextString);
 
         } catch (final IOException ioe) {
@@ -165,7 +168,7 @@ public class ProtocolElGamalInterfaceJSONDecode
             throw new ProtocolFormatException("Could not parse!", sje);
         }
 
-        if (map.size() != 4) {
+        if (map.size() < 4) {
             throw new ProtocolFormatException("Wrong number of values in map!");
         }
 
@@ -174,11 +177,17 @@ public class ProtocolElGamalInterfaceJSONDecode
         final LargeInteger g = readLargeInteger(map, "g");
         final LargeInteger y = readLargeInteger(map, "y");
 
-        try {
-            int encoding = ModPGroup.SUBGROUP_ENCODING;
+        int encoding;
+        if (map.containsKey("encoding")) {
+            encoding = readLargeInteger(map, "encoding").intValue();
+        } else {
+            encoding = ModPGroup.SUBGROUP_ENCODING;
             if (q.mul(LargeInteger.TWO).add(LargeInteger.ONE).equals(p)) {
                 encoding = ModPGroup.SAFEPRIME_ENCODING;
             }
+        }
+
+        try {
             final ModPGroup modPGroup = new ModPGroup(p, q, g, encoding,
                                                       randomSource, certainty);
 
