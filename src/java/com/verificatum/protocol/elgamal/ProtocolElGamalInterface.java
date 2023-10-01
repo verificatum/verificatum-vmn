@@ -29,12 +29,18 @@ package com.verificatum.protocol.elgamal;
 import java.io.File;
 import java.io.IOException;
 
+import com.verificatum.arithm.ArithmFormatException;
 import com.verificatum.arithm.PGroup;
 import com.verificatum.arithm.PGroupElement;
 import com.verificatum.arithm.PGroupElementArray;
+import com.verificatum.arithm.PPGroup;
+import com.verificatum.arithm.PPGroupElement;
 import com.verificatum.crypto.CryptoException;
 import com.verificatum.crypto.PRG;
 import com.verificatum.crypto.RandomSource;
+import com.verificatum.eio.ByteTreeBasic;
+import com.verificatum.eio.ByteTreeContainer;
+import com.verificatum.eio.ByteTreeReader;
 import com.verificatum.eio.EIOException;
 import com.verificatum.eio.ExtIO;
 import com.verificatum.eio.Marshalizer;
@@ -50,6 +56,62 @@ import com.verificatum.protocol.ProtocolFormatException;
  * @author Douglas Wikstrom
  */
 public abstract class ProtocolElGamalInterface {
+
+    /**
+     * Returns a byte tree representing a full public key.
+     *
+     * @param fullPublicKey Full public key.
+     */
+    protected ByteTreeBasic publicKeyToByteTree
+        (final PGroupElement fullPublicKey) {
+
+        final PGroup pGroup =
+            ((PPGroupElement) fullPublicKey).project(0).getPGroup();
+        final ByteTreeBasic gbt = Marshalizer.marshal(pGroup);
+        final ByteTreeBasic kbt = fullPublicKey.toByteTree();
+
+        return new ByteTreeContainer(gbt, kbt);
+    }
+
+    /**
+     * Reads a full public key from file.
+     *
+     * @param file Source of representation of public key.
+     * @param randomSource Source of randomness.
+     * @param certainty Determines the error probability when
+     * verifying the representation of the underlying
+     * group.
+     * @return Full public key.
+     *
+     * @throws ProtocolFormatException If the file does not contain a
+     * valid public key.
+     */
+    protected PGroupElement byteTreeToPublicKey(final ByteTreeBasic byteTree,
+                                                final RandomSource randomSource,
+                                                final int certainty)
+        throws ProtocolFormatException {
+
+        ByteTreeReader btr = null;
+        try {
+            btr = byteTree.getByteTreeReader();
+            final PGroup pGroup =
+                Marshalizer.unmarshalAux_PGroup(btr.getNextChild(),
+                                                randomSource,
+                                                certainty);
+            final PGroup ciphPGroup = new PPGroup(pGroup, 2);
+
+            return ciphPGroup.toElement(btr.getNextChild());
+
+        } catch (final EIOException eioe) {
+            throw new ProtocolFormatException("Malformed key!", eioe);
+        } catch (final ArithmFormatException afe) {
+            throw new ProtocolFormatException("Malformed key!", afe);
+        } finally {
+            if (btr != null) {
+                btr.close();
+            }
+        }
+    }
 
     /**
      * Writes a full public key to file.
@@ -89,7 +151,7 @@ public abstract class ProtocolElGamalInterface {
     /**
      * Reads ciphertexts from file.
      *
-     * @param pGroup Group to which the ciphertexts belong.
+     * @param ciphPGroup Group to which the ciphertexts belong.
      * @param file Source of representation of ciphertexts.
      * @return Ciphertexts.
      *
@@ -98,7 +160,8 @@ public abstract class ProtocolElGamalInterface {
      * error and preferably point to the line of failure in the
      * exception message.
      */
-    public abstract PGroupElementArray readCiphertexts(PGroup pGroup, File file)
+    public abstract PGroupElementArray readCiphertexts(PGroup ciphPGroup,
+                                                       File file)
         throws ProtocolFormatException;
 
     /**

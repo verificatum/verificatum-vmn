@@ -28,6 +28,7 @@ package com.verificatum.protocol.elgamal;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 import com.verificatum.arithm.ArithmFormatException;
 import com.verificatum.arithm.PGroup;
@@ -46,25 +47,23 @@ import com.verificatum.protocol.ProtocolFormatException;
 
 
 /**
- * Native interface that uses the byte tree representation of objects
+ * Interface that uses the byte tree representation of objects
  * converted to hexadecimal strings, except that lists of ciphertexts
- * or plaintexts are represented as separate lines in the input which
- * is a more convenient format.
+ * or plaintexts are represented as newline-separated files of
+ * hexadecimal encoded byte trees.
  *
  * @author Douglas Wikstrom
  */
-public class ProtocolElGamalInterfaceNative
-    extends ProtocolElGamalInterfaceString {
+public class ProtocolElGamalInterfaceSeqHex
+    extends ProtocolElGamalInterfaceSeq {
 
     @Override
     public void writePublicKey(final PGroupElement fullPublicKey,
                                final File file) {
 
         final ByteTreeBasic byteTree = publicKeyToByteTree(fullPublicKey);
-
         try {
             ExtIO.writeString(file, Hex.toHexString(byteTree.toByteArray()));
-
         } catch (final IOException ioe) {
             throw new ProtocolError("Unable to write public key!", ioe);
         }
@@ -75,11 +74,10 @@ public class ProtocolElGamalInterfaceNative
                                        final RandomSource randomSource,
                                        final int certainty)
         throws ProtocolFormatException {
-
         try {
 
-            final String publicKeyString = ExtIO.readString(file);
-            final byte[] keyBytes = Hex.toByteArray(publicKeyString);
+            final String publicKeyLine = ExtIO.readString(file);
+            final byte[] keyBytes = Hex.toByteArray(publicKeyLine);
             final ByteTree byteTree = new ByteTree(keyBytes, null);
 
             return byteTreeToPublicKey(byteTree, randomSource, certainty);
@@ -92,31 +90,56 @@ public class ProtocolElGamalInterfaceNative
     }
 
     @Override
-    public String ciphertextToString(final PGroupElement ciphertext) {
-        final byte[] bytes = ciphertext.toByteTree().toByteArray();
-        return Hex.toHexString(bytes);
+    protected CiphertextWriter getCiphertextWriter(final File file) {
+        return new CiphertextWriterLine(file) {
+            public String ciphertextToLine(final PGroupElement ciphertext) {
+                final byte[] bytes = ciphertext.toByteTree().toByteArray();
+                return Hex.toHexString(bytes);
+            }
+        };
     }
 
     @Override
-    protected PGroupElement
-        stringToCiphertext(final PGroup ciphPGroup,
-                           final String ciphertextString)
-        throws ProtocolFormatException {
+    protected CiphertextReader getCiphertextReader(final PGroup ciphPGroup,
+                                                   final File file)
+    throws ProtocolFormatException {
 
-        try {
+        return new CiphertextReaderLine(ciphPGroup, file) {
+            protected PGroupElement
+                lineToCiphertext(final String ciphertextLine)
+                throws ProtocolFormatException {
+                try {
 
-            final byte[] bytes = Hex.toByteArray(ciphertextString);
-            final ByteTree bt = new ByteTree(bytes, null);
-            final ByteTreeReader btr = bt.getByteTreeReader();
+                    final byte[] bytes = Hex.toByteArray(ciphertextLine);
+                    final ByteTree bt = new ByteTree(bytes, null);
+                    final ByteTreeReader btr = bt.getByteTreeReader();
 
-            return ciphPGroup.toElement(btr);
+                    return ciphPGroup.toElement(btr);
 
-        } catch (final EIOException eioe) {
-            throw new ProtocolFormatException("Unable to parse ciphertext!",
-                                              eioe);
-        } catch (final ArithmFormatException afe) {
-            throw new ProtocolFormatException("Unable to parse ciphertext!",
-                                              afe);
-        }
+                } catch (final EIOException eioe) {
+                    throw new ProtocolFormatException("Unable to parse "
+                                                      + "ciphertext!",
+                                                      eioe);
+                } catch (final ArithmFormatException afe) {
+                    throw new ProtocolFormatException("Unable to parse "
+                                                      + "ciphertext!",
+                                                      afe);
+                }
+            }
+        };
+    }
+
+    @Override
+    protected PlaintextDecoder getPlaintextDecoder(final File file) {
+        return new PlaintextDecoderLine(file) {
+            public String plaintextToLine(final PGroupElement plaintext) {
+                try {
+                    final String s = new String(plaintext.decode(), "UTF-8");
+                    return s.replaceAll("\n", "").replaceAll("\r", "");
+                } catch (final UnsupportedEncodingException uee) {
+                    throw new ProtocolError("Unable to decode plaintext!", uee);
+                }
+            }
+        };
     }
 }

@@ -50,7 +50,10 @@ import com.verificatum.protocol.ProtocolFormatException;
 
 
 /**
- * Raw interface of an El Gamal mix-net.
+ * Raw interface that uses the byte tree representation of Verificatum
+ * itself to represent input and output. This means that lists of
+ * ciphertexts are represented column by column which is convenient to
+ * Verificatum, but not to end users.
  *
  * @author Douglas Wikstrom
  */
@@ -60,12 +63,7 @@ public class ProtocolElGamalInterfaceRaw extends ProtocolElGamalInterface
     @Override
     public void writePublicKey(final PGroupElement fullPublicKey,
                                final File file) {
-        final PGroup pGroup =
-            ((PPGroupElement) fullPublicKey).project(0).getPGroup();
-        final ByteTreeBasic gbt = Marshalizer.marshal(pGroup);
-        final ByteTreeBasic kbt = fullPublicKey.toByteTree();
-
-        (new ByteTreeContainer(gbt, kbt)).unsafeWriteTo(file);
+        publicKeyToByteTree(fullPublicKey).unsafeWriteTo(file);
     }
 
     @Override
@@ -74,25 +72,8 @@ public class ProtocolElGamalInterfaceRaw extends ProtocolElGamalInterface
                                        final int certainty)
         throws ProtocolFormatException {
 
-        ByteTreeReader btr = null;
-        try {
-
-            btr = new ByteTreeReaderF(file);
-            final PGroup keyPGroup =
-                Marshalizer.unmarshalAux_PGroup(btr.getNextChild(),
-                                                randomSource, certainty);
-
-            return new PPGroup(keyPGroup, 2).toElement(btr.getNextChild());
-
-        } catch (final EIOException eioe) {
-            throw new ProtocolFormatException("Malformed key!", eioe);
-        } catch (final ArithmFormatException afe) {
-            throw new ProtocolFormatException("Malformed key!", afe);
-        } finally {
-            if (btr != null) {
-                btr.close();
-            }
-        }
+        final ByteTreeBasic byteTree = new ByteTreeF(file);
+        return byteTreeToPublicKey(byteTree, randomSource, certainty);
     }
 
     @Override

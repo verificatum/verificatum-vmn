@@ -28,6 +28,7 @@ package com.verificatum.protocol.elgamal;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 import com.verificatum.arithm.ArithmFormatException;
 import com.verificatum.arithm.PGroup;
@@ -46,15 +47,14 @@ import com.verificatum.protocol.ProtocolFormatException;
 
 
 /**
- * Native interface that uses the byte tree representation of objects
- * converted to hexadecimal strings, except that lists of ciphertexts
- * or plaintexts are represented as separate lines in the input which
- * is a more convenient format.
+ * Interface that uses the JSON byte tree representation of
+ * objects. Lists of ciphertexts and plaintexts are JSON byte trees
+ * containing the individual ciphertext/plaintext JSON byte trees.
  *
  * @author Douglas Wikstrom
  */
-public class ProtocolElGamalInterfaceNative
-    extends ProtocolElGamalInterfaceString {
+public class ProtocolElGamalInterfaceSeqJSON
+    extends ProtocolElGamalInterfaceSeq {
 
     @Override
     public void writePublicKey(final PGroupElement fullPublicKey,
@@ -63,10 +63,10 @@ public class ProtocolElGamalInterfaceNative
         final ByteTreeBasic byteTree = publicKeyToByteTree(fullPublicKey);
 
         try {
-            ExtIO.writeString(file, Hex.toHexString(byteTree.toByteArray()));
+            byteTree.writeJSONTo(file);
 
-        } catch (final IOException ioe) {
-            throw new ProtocolError("Unable to write public key!", ioe);
+        } catch (final EIOException eioe) {
+            throw new ProtocolError("Unable to write public key!", eioe);
         }
     }
 
@@ -78,45 +78,28 @@ public class ProtocolElGamalInterfaceNative
 
         try {
 
-            final String publicKeyString = ExtIO.readString(file);
-            final byte[] keyBytes = Hex.toByteArray(publicKeyString);
-            final ByteTree byteTree = new ByteTree(keyBytes, null);
-
+            final ByteTreeBasic byteTree = ByteTreeBasic.readJSONFrom(file);
             return byteTreeToPublicKey(byteTree, randomSource, certainty);
 
-        } catch (final IOException ioe) {
-            throw new ProtocolFormatException("Malformed key!", ioe);
         } catch (final EIOException eioe) {
             throw new ProtocolFormatException("Malformed key!", eioe);
         }
     }
 
     @Override
-    public String ciphertextToString(final PGroupElement ciphertext) {
-        final byte[] bytes = ciphertext.toByteTree().toByteArray();
-        return Hex.toHexString(bytes);
+    protected CiphertextWriter getCiphertextWriter(final File file) {
+        return new CiphertextWriterJSON(file);
     }
 
     @Override
-    protected PGroupElement
-        stringToCiphertext(final PGroup ciphPGroup,
-                           final String ciphertextString)
-        throws ProtocolFormatException {
+    protected CiphertextReader getCiphertextReader(final PGroup ciphPGroup,
+                                                   final File file)
+    throws ProtocolFormatException {
+        return new CiphertextReaderJSON(ciphPGroup, file);
+    }
 
-        try {
-
-            final byte[] bytes = Hex.toByteArray(ciphertextString);
-            final ByteTree bt = new ByteTree(bytes, null);
-            final ByteTreeReader btr = bt.getByteTreeReader();
-
-            return ciphPGroup.toElement(btr);
-
-        } catch (final EIOException eioe) {
-            throw new ProtocolFormatException("Unable to parse ciphertext!",
-                                              eioe);
-        } catch (final ArithmFormatException afe) {
-            throw new ProtocolFormatException("Unable to parse ciphertext!",
-                                              afe);
-        }
+    @Override
+    protected PlaintextDecoder getPlaintextDecoder(final File file) {
+        return new PlaintextDecoderJSON(file);
     }
 }

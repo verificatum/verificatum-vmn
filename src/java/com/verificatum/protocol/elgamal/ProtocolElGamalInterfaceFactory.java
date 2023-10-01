@@ -60,6 +60,8 @@ public class ProtocolElGamalInterfaceFactory {
     static {
         put("raw", "ProtocolElGamalInterfaceRaw");
         put("native", "ProtocolElGamalInterfaceNative");
+        put("seqhex", "ProtocolElGamalInterfaceSeqHex");
+        put("seqjson", "ProtocolElGamalInterfaceSeqJSON");
         put("json", "ProtocolElGamalInterfaceJSON");
         put("jsondecode", "ProtocolElGamalInterfaceJSONDecode");
     }
