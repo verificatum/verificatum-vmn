@@ -180,3 +180,8 @@ bugs. Security critical bugs, vulnerabilities, etc should be reported
 directly to the Verificatum Project. We will make best effort to
 disclose the information in a responsible way before the finder gets
 proper credit.
+
+## Sponsoring
+
+Development of additional interface supported by
+[VotingWorks](https://www.voting.works) DARPA contract #HR00112290093.
