@@ -186,8 +186,10 @@ public final class ProtocolElGamalInterfaceTool {
             + "are determined by the \"-ini\" and \"-outi\" options."
             + "\n\n"
             + "Possible values of the input and output interfaces are are "
-            + "\"raw\", \"native\", or \"json\", or the name of a "
-            + "subclass of com.verificatum.protocol.ProtocolElGamalInterface.";
+            + "\"raw\", \"native\", \"seqjson\", or \"json\" (deprecated), "
+            + "or the name of a subclass of "
+            + "com.verificatum.protocol.ProtocolElGamalInterface. See "
+            + "documentation for more information.";
 
         opt.appendDescription(s);
 
